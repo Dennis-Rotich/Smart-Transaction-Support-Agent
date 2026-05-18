@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="TransactionService.Api/TransactionService.Api.csproj" />
+  <Project Path="TransactionService.Application/TransactionService.Application.csproj" />
+  <Project Path="TransactionService.Domain/TransactionService.Domain.csproj" />
+  <Project Path="TransactionService.Infrastructure/TransactionService.Infrastructure.csproj" />
+</Solution>
