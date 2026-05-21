@@ -3,21 +3,24 @@ using TransactionService.Domain.Entities;
 using TransactionService.Domain.Enums;
 using TransactionService.Domain.Repositories;
 using TransactionService.Application.Transactions.DTOs;
+using TransactionService.Application.Interfaces;
 
 namespace TransactionService.Application.Transactions.Commands;
 
-public class CreateTransactionCommandHandler : IRequestHandler<CreateTransactionCommand, TransactionResponse>
+public class CreateTransactionCommandHandler : IRequestHandler<CreateTransactionCommand, TransactionResponseCreate>
 {
     private readonly ITransactionRepository _repository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IPaymentGatewayService _paymentGateway;
 
-    public CreateTransactionCommandHandler(ITransactionRepository repository, IUnitOfWork unitOfWork)
+    public CreateTransactionCommandHandler(ITransactionRepository repository, IUnitOfWork unitOfWork, IPaymentGatewayService paymentGateway)
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
+        _paymentGateway = paymentGateway;
     }
 
-    public async Task<TransactionResponse> Handle(CreateTransactionCommand request, CancellationToken cancellationToken)
+    public async Task<TransactionResponseCreate> Handle(CreateTransactionCommand request, CancellationToken cancellationToken)
     {
         var reference = $"TXN-{Guid.NewGuid().ToString("N")[..8].ToUpper()}";
 
@@ -28,11 +31,19 @@ public class CreateTransactionCommandHandler : IRequestHandler<CreateTransaction
         await _repository.AddAsync(transaction);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new TransactionResponse(
+        var pesapalToken = await _paymentGateway.GetTokenAsync();
+
+        var (checkoutUrl, orderTrackingId) = await _paymentGateway.SubmitOrderAsync(pesapalToken, transaction.Amount, transaction.Currency, transaction.Reference);
+
+        transaction.LinkExternalTracking(orderTrackingId);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return new TransactionResponseCreate(
             transaction.Reference,
             transaction.Amount,
             transaction.Currency,
             transaction.Status.ToString(),
-            transaction.CreatedAt);
+            transaction.CreatedAt,
+            checkoutUrl);
     }
 }

@@ -22,4 +22,11 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
             .Take(count)
             .ToListAsync();
     }
+
+    public async Task<Transaction?> GetByTrackingIdAsync(string trackingId)
+    {
+        return await _context.Transactions
+            .Include(t => t.Logs)
+            .FirstOrDefaultAsync(t => t.ExternalTrackingId == trackingId);
+    }
 }

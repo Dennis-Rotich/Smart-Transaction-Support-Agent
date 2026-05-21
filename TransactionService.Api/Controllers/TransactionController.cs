@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using TransactionService.Application.Transactions.Commands;
 using TransactionService.Application.Transactions.Queries;
+using TransactionService.Application.Interfaces;
 
 namespace TransactionService.Api.Controllers;
 
@@ -33,5 +34,28 @@ public class TransactionController : ControllerBase
         if (response == null) return NotFound($"Transaction with reference {reference} was not found.");
 
         return Ok(response);
+    }
+
+    [HttpPost("setup-ipn")]
+    public async Task<IActionResult> SetupIpn([FromServices] IPaymentGatewayService gateway)
+    {
+        var token = await gateway.GetTokenAsync();
+
+        var ipnId = await gateway.RegisterIpnAsync(token, "https://uncruel-autogamous-kacie.ngrok-free.dev/api/transaction/ipn");
+
+        return Ok(new { Message = "Copy this ID into your appsettings.json!", IpnId = ipnId });
+    }
+
+    [HttpPost("ipn")]
+    public async Task<IActionResult> ReceiveIpn([FromQuery] string OrderTrackingId, [FromQuery] string IpnNotificationId)
+    {
+        var command = new ProcessIpnCommand(OrderTrackingId, IpnNotificationId);
+        var result = await _mediator.Send(command);
+
+        return Ok(new
+        {
+            OrderTrackingId = OrderTrackingId,
+            Status = "OK"
+        });
     }
 }

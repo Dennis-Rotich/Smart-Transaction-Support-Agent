@@ -12,6 +12,7 @@ namespace TransactionService.Domain.Entities
         public TransactionStatus Status { get; private set; }
         public string? ProviderReference { get; private set; }
         public DateTime? UpdatedAt { get; private set; }
+        public string? ExternalTrackingId { get; private set; }
 
         public ICollection<TransactionLog> Logs { get; private set; } = new List<TransactionLog>
         ();
@@ -41,6 +42,13 @@ namespace TransactionService.Domain.Entities
         public void AddLog(EventType type, string? message = null, string? providerResponseCode = null, string? providerResponseBody = null)
         {
             Logs.Add(new TransactionLog(this.Id, type, message, providerResponseCode, providerResponseBody));
+        }
+
+        public void LinkExternalTracking(string orderTrackingId)
+        {   
+            if(string.IsNullOrWhiteSpace(orderTrackingId)) throw new ArgumentException("Tracking ID cannot be empty.");
+            ExternalTrackingId = orderTrackingId;
+            UpdatedAt = DateTime.UtcNow;
         }
     }
 }

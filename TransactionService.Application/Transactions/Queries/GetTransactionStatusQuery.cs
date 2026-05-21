@@ -3,4 +3,4 @@ using TransactionService.Application.Transactions.DTOs;
 
 namespace TransactionService.Application.Transactions.Queries;
 
-public record GetTransactionStatusQuery(string Reference) : IRequest<TransactionResponse?>;
+public record GetTransactionStatusQuery(string Reference) : IRequest<TransactionResponseGet?>;

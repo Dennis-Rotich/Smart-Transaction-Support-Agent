@@ -4,6 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using TransactionService.Domain.Repositories;
 using TransactionService.Infrastructure.Persistence;
 using TransactionService.Infrastructure.Persistence.Repositories;
+using TransactionService.Application.Interfaces;
+using TransactionService.Infrastructure.Integrations;
 
 namespace TransactionService.Infrastructure;
 
@@ -21,6 +23,8 @@ public static class DependencyInjection
         services.AddScoped<ITransactionRepository, TransactionRepository>();
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        services.AddHttpClient<IPaymentGatewayService, PesapalGatewayService>();
 
         return services;
     }
