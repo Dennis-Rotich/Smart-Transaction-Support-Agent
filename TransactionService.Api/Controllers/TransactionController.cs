@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using TransactionService.Application.Transactions.Commands;
 using TransactionService.Application.Transactions.Queries;
 using TransactionService.Application.Interfaces;
+using TransactionService.Application.Transactions.DTOs;
 
 namespace TransactionService.Api.Controllers;
 
@@ -47,15 +48,22 @@ public class TransactionController : ControllerBase
     }
 
     [HttpPost("ipn")]
-    public async Task<IActionResult> ReceiveIpn([FromQuery] string OrderTrackingId, [FromQuery] string IpnNotificationId)
+    public async Task<IActionResult> ReceiveIpn([FromBody] PesapalIpnPayload payload)
     {
-        var command = new ProcessIpnCommand(OrderTrackingId, IpnNotificationId);
+        if (payload == null || string.IsNullOrWhiteSpace(payload?.OrderTrackingId))
+        {
+            return BadRequest("Invalid IPN payload");
+        }
+
+        var command = new ProcessIpnCommand(payload.OrderTrackingId, payload.OrderNotificationType ?? "");
         var result = await _mediator.Send(command);
 
         return Ok(new
         {
-            OrderTrackingId = OrderTrackingId,
-            Status = "OK"
+            orderNotificationType = payload.OrderNotificationType,
+            orderTrackingId = payload.OrderTrackingId,
+            orderMerchantReference = payload.OrderMerchantReference,
+            status = 200
         });
     }
 }
