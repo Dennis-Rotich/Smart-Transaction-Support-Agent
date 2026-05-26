@@ -2,6 +2,8 @@ using TransactionService.Infrastructure;
 using TransactionService.Application.Transactions.Commands;
 using ModelContextProtocol.Server;
 using TransactionService.Api.Tools;
+using TransactionService.Application.Interfaces;
+using TransactionService.Infrastructure.Persistence.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,12 +25,21 @@ builder.Services.AddMcpServer()
 
 builder.Services.AddTransient<TransactionTools>();
 
+builder.Services.AddTransient<RetrievalTools>();
+
 builder.Services.AddMcpServer()
     .WithHttpTransport(options =>
     {
         options.Stateless = true;
     })
     .WithToolsFromAssembly(typeof(TransactionTools).Assembly);
+
+//builder.Services.AddSingleton<ISystemLogRepository, MockRetrievalServices>();
+//builder.Services.AddSingleton<IDocumentRepository, MockRetrievalServices>();
+builder.Services.AddSingleton<IKnowledgeBaseRepository, MockRetrievalServices>();
+
+builder.Services.AddScoped<ISystemLogRepository, SystemLogRepository>();
+builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 
 var app = builder.Build();
 
