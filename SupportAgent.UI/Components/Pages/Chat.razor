@@ -1,0 +1,67 @@
+@page "/"
+@using SupportAgent.UI.Models
+@rendermode InteractiveServer
+
+<PageTitle>Smart Support Agent</PageTitle>
+
+<div class="chat-container">
+    <div class="chat-header">
+        <h2>Pesapal Smart Support</h2>
+    </div>
+
+    <div class="message-history">
+        @if (!Messages.Any())
+        {
+            <div class="empty-state">How can I help you with your transactions today?</div>
+        }
+        else
+        {
+            @foreach (var message in Messages)
+            {
+                <div class="message-row @(message.Role.ToLower())">
+                    <div class="message-bubble">
+                        <div class="message-content">@message.Content</div>
+                        <div class="message-time">@message.Timestamp.ToString("t")</div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    <div class="chat-input-area">
+        <input type="text"
+            class="prompt-input"
+               placeholder="Ask about a transaction, refund policy, or error..."
+               @bind="CurrentPrompt"
+               @bind:event="on-input"
+               @onkeyup="HandleKeyUp"/>
+        <button class="send-btn" @onclick="sendMessage" disabled="@string.IsNullOrWhiteSpace(CurrentPrompt)">
+            Send
+        </button>
+    </div>
+</div>
+
+@code{
+    private List<ChatMessage> Messages = new();
+    private string CurrentPrompt = string.Empty;
+
+    private void sendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(CurrentPrompt))
+            return;
+
+        Messages.Add(new ChatMessage { Role = "User", Content = CurrentPrompt });
+
+        Messages.Add(new ChatMessage { Role = "System", Content = "I am looking into that for you..." });
+
+        CurrentPrompt = string.Empty;
+    }
+
+    private void HandleKeyUp(KeyboardEventArgs e)
+    {
+        if(e.Key == "Enter")
+        {
+            sendMessage();    
+        }
+    }
+}

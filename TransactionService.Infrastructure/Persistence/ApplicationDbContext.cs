@@ -11,6 +11,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Transaction> Transactions { get; set; }
     public DbSet<TransactionLog> TransactionLogs { get; set; }
     public DbSet<Document> Documents { get; set; }
+	public DbSet<KnowledgeArticle> KnowledgeArticles { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -60,5 +61,28 @@ public class ApplicationDbContext : DbContext
 			entity.Property(e => e.StoragePath).IsRequired();
 			entity.Property(e => e.DocumentType).HasMaxLength(100).IsRequired(false);
 		});
-	}
+
+        // Knowledge Article Configuration
+        modelBuilder.Entity<KnowledgeArticle>(entity =>
+        {
+            // Explicitly map to the MySQL table name
+            entity.ToTable("KNOWLEDGE_BASE");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Title)
+                .IsRequired()
+                .HasMaxLength(255);
+
+            entity.Property(e => e.Excerpt)
+                .IsRequired()
+                .HasMaxLength(500);
+
+            entity.Property(e => e.Content)
+                .IsRequired();
+
+            entity.Property(e => e.CreatedAt)
+                .ValueGeneratedOnAdd();
+        });
+    }
 }

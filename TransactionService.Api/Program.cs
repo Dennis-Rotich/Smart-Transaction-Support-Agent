@@ -34,13 +34,6 @@ builder.Services.AddMcpServer()
     })
     .WithToolsFromAssembly(typeof(TransactionTools).Assembly);
 
-//builder.Services.AddSingleton<ISystemLogRepository, MockRetrievalServices>();
-//builder.Services.AddSingleton<IDocumentRepository, MockRetrievalServices>();
-builder.Services.AddSingleton<IKnowledgeBaseRepository, MockRetrievalServices>();
-
-builder.Services.AddScoped<ISystemLogRepository, SystemLogRepository>();
-builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
-
 var app = builder.Build();
 
 app.UseHttpsRedirection();
