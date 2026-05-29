@@ -1,6 +1,8 @@
 @page "/"
 @using SupportAgent.UI.Models
+@using SupportAgent.UI.Services
 @rendermode InteractiveServer
+@inject McpClientService McpService
 
 <PageTitle>Smart Support Agent</PageTitle>
 
@@ -33,10 +35,10 @@
             class="prompt-input"
                placeholder="Ask about a transaction, refund policy, or error..."
                @bind="CurrentPrompt"
-               @bind:event="on-input"
+               @bind:event="oninput"
                @onkeyup="HandleKeyUp"/>
-        <button class="send-btn" @onclick="sendMessage" disabled="@string.IsNullOrWhiteSpace(CurrentPrompt)">
-            Send
+        <button class="send-btn" @onclick="sendMessage" disabled="@(string.IsNullOrWhiteSpace(CurrentPrompt) || IsLoading)">
+            @(IsLoading ? "..." : "Send")
         </button>
     </div>
 </div>
@@ -44,17 +46,30 @@
 @code{
     private List<ChatMessage> Messages = new();
     private string CurrentPrompt = string.Empty;
+    private bool IsLoading = false;
 
-    private void sendMessage()
+    private async void sendMessage()
     {
         if (string.IsNullOrWhiteSpace(CurrentPrompt))
             return;
 
-        Messages.Add(new ChatMessage { Role = "User", Content = CurrentPrompt });
-
-        Messages.Add(new ChatMessage { Role = "System", Content = "I am looking into that for you..." });
-
+        var userText = CurrentPrompt;
         CurrentPrompt = string.Empty;
+        IsLoading = true;
+
+        Messages.Add(new ChatMessage { Role = "User", Content = userText });
+        StateHasChanged(); 
+
+        try
+        {
+            var backendResponse = await McpService.SendPromptAsync(userText);
+            Messages.Add(new ChatMessage { Role = "System", Content = backendResponse });
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
     }
 
     private void HandleKeyUp(KeyboardEventArgs e)

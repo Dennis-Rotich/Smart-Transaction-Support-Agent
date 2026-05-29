@@ -36,7 +36,7 @@ builder.Services.AddMcpServer()
 
 var app = builder.Build();
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
