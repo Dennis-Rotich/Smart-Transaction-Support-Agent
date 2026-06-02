@@ -3,6 +3,7 @@
 @using SupportAgent.UI.Services
 @rendermode InteractiveServer
 @inject McpClientService McpService
+@inject UploadDocumentService UploadService
 
 <PageTitle>Smart Support Agent</PageTitle>
 
@@ -30,14 +31,40 @@
         }
     </div>
 
+    @if(selectedFile != null)
+    {
+        <div class="file-staging-area">
+            <span class="file-icon">📄</span>
+            <span class="file-name">@selectedFile.Name</span>
+            <span class="file-size">(@(selectedFile.Size / 1024) KB)</span>
+            <button class="remove-file-btn" @onclick="clearFile" disabled="@IsLoading">✖</button>
+        </div>
+    }
+
+    @if(!string.IsNullOrEmpty(FileError))
+    {
+        <div class="file-error-text">@FileError</div>
+    }   )
+
     <div class="chat-input-area">
+        <div class="upload-wrapper">
+            <label for="fileInput" class="upload-btn @(IsLoading ? "disabled": "")" >        
+                📎
+            </label>
+            <InputFile id="fileInput"
+                OnChange="HandleFileSelected"
+                style="display:none"
+                disabed="@IsLoading"
+                accept=".txt,.md,.pdf,.csv,.log"/>
+        </div>
         <input type="text"
             class="prompt-input"
-               placeholder="Ask about a transaction, refund policy, or error..."
+               placeholder="Ask a question or upload a document..."            
                @bind="CurrentPrompt"
                @bind:event="oninput"
-               @onkeyup="HandleKeyUp"/>
-        <button class="send-btn" @onclick="sendMessage" disabled="@(string.IsNullOrWhiteSpace(CurrentPrompt) || IsLoading)">
+               @onkeyup="HandleKeyUp"
+               disabled="@IsLoading"/>
+        <button class="send-btn" @onclick="sendMessage" disabled="@(string.IsNullOrWhiteSpace(CurrentPrompt) && selectedFile == null || IsLoading)">
             @(IsLoading ? "..." : "Send")
         </button>
     </div>
@@ -48,22 +75,88 @@
     private string CurrentPrompt = string.Empty;
     private bool IsLoading = false;
 
+    private IBrowserFile? selectedFile;
+    private string FileError = string.Empty;
+
+    private const long MaxFileSize = 5 * 1024 * 1024;
+    private readonly string[] AllowedExtensions = new[] { ".txt", ".md", ".pdf", ".csv", ".log" };
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        FileError = string.Empty;
+
+        if(file == null)
+        {
+            FileError = "No file selected.";
+            return;
+        }
+
+        if (file.Size > MaxFileSize)
+        {
+            FileError = $"{file.Name} size exceeds the 5MB limit.";
+            selectedFile = null;
+            return;
+        }
+        var extension = Path.GetExtension(file.Name).ToLower();
+        if (!AllowedExtensions.Contains(extension))
+        {
+            FileError = $"{extension} files are not supported. Please upload TXT, MD, PDF, CSV, or LOG.";
+            return;
+        }
+        selectedFile = file;
+        StateHasChanged();
+    }
+
+    private void clearFile()
+    {
+        selectedFile = null;
+        FileError = string.Empty;
+        StateHasChanged();
+    }
+
     private async void sendMessage()
     {
-        if (string.IsNullOrWhiteSpace(CurrentPrompt))
+        if (string.IsNullOrWhiteSpace(CurrentPrompt) && selectedFile == null)
             return;
 
-        var userText = CurrentPrompt;
-        CurrentPrompt = string.Empty;
         IsLoading = true;
+        StateHasChanged();
+        try{
+            if(selectedFile != null){
+                Messages.Add(new ChatMessage { Role = "User", Content = $"[Uploading file: {selectedFile.Name}...]" });
+                StateHasChanged();
+            
+                var uploadResult = await UploadService.UploadDocumentAsync(selectedFile);
 
-        Messages.Add(new ChatMessage { Role = "User", Content = userText });
-        StateHasChanged(); 
+                if(uploadResult != null){
+                    Messages.Add(new ChatMessage { Role = "System", Content = "File successfully stored." });
+                } else{
+                    Messages.Add(new ChatMessage { Role = "System", Content = "File upload failed." });
+                }
 
-        try
+                selectedFile = null;
+                FileError = string.Empty;
+            }
+
+            if(!string.IsNullOrWhiteSpace(CurrentPrompt)){
+                var userText = CurrentPrompt;
+                CurrentPrompt = string.Empty;
+            
+                Messages.Add(new ChatMessage { Role = "User", Content = userText });
+                StateHasChanged(); 
+
+                var backendResponse = await McpService.SendPromptAsync(userText);
+                Messages.Add(new ChatMessage { Role = "System", Content = backendResponse });
+            }     
+        } catch(Exception ex)
         {
-            var backendResponse = await McpService.SendPromptAsync(userText);
-            Messages.Add(new ChatMessage { Role = "System", Content = backendResponse });
+            Messages.Add(new ChatMessage
+            {
+                Role = "system",
+                Content = $"Error: {ex.Message}",
+                Timestamp = DateTime.Now
+            });
         }
         finally
         {

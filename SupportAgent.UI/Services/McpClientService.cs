@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Components.Forms;
 
 namespace SupportAgent.UI.Services;
 
@@ -92,4 +93,6 @@ public class McpClientService
             return $"[System Error: Failed to connect to backend. {ex.Message}]";
         }
     }
+
+    
 }

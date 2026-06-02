@@ -1,6 +1,3 @@
-using MediatR;
-using System;
-using System.Collections.Generic;
 
 namespace TransactionService.Application.Transactions.DTOs;
 
