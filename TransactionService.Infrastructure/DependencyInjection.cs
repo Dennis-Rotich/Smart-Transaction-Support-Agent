@@ -24,6 +24,7 @@ public static class DependencyInjection
         services.AddScoped<ISystemLogRepository, SystemLogRepository>();
         services.AddScoped<IDocumentRepository, DocumentRepository>();
         services.AddScoped<IKnowledgeBaseRepository, KnowledgeBaseRepository>();
+        services.AddScoped<IAiOrchestratorService, OpenAiOrchestratorService>();
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
