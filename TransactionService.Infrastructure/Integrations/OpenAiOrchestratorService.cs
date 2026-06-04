@@ -1,21 +1,29 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using OpenAI.Chat;
 using TransactionService.Application.Interfaces;
+using TransactionService.Infrastructure.Tools;
 
 namespace TransactionService.Infrastructure.Integrations;
 
 public class OpenAiOrchestratorService : IAiOrchestratorService
 {
     private readonly ChatClient _chatClient;
+    private readonly TransactionTools _transactionTools;
+    private readonly SystemTools _systemTools;
+    private readonly RetrievalTools _retrievalTools;
 
-    public OpenAiOrchestratorService(IConfiguration configuration)
+    public OpenAiOrchestratorService(IConfiguration configuration, TransactionTools transactionTools, SystemTools systemTools, RetrievalTools retrievalTools)
     {
         var apiKey = configuration["OpenAI:ApiKey"];
-        var model = configuration["OpenAI:Model"] ?? "gpt-40-mini";
+        var model = "gpt-4o-mini";
        
         _chatClient = new ChatClient(model, apiKey);
+        _transactionTools = transactionTools;
+        _retrievalTools = retrievalTools;
+        _systemTools = systemTools;
     }
 
     public async Task<string> GetChatResponseAsync(string userPrompt)
@@ -42,9 +50,55 @@ public class OpenAiOrchestratorService : IAiOrchestratorService
             new UserChatMessage(userPrompt)
         };
 
-        var completion = await _chatClient.CompleteChatAsync(messages);
+        var options = new ChatCompletionOptions();
+        var allToolClasses = new List<object> { _transactionTools, _systemTools, _retrievalTools };
 
-        return completion.Value.Content[0].Text;
+        foreach (var toolClass in allToolClasses)
+        {
+            foreach (var tool in ToolReflectionEngine.GenerateTools(toolClass))
+            {
+                options.Tools.Add(tool);
+            }
+        }
+
+        var requiresAction= true;
+        ChatCompletion? completion = null;
+
+        while (requiresAction)
+        {
+            completion = await _chatClient.CompleteChatAsync(messages, options);
+
+            if (completion.FinishReason == ChatFinishReason.ToolCalls)
+            {
+                messages.Add(new AssistantChatMessage(completion));
+
+                foreach (var toolCall in completion.ToolCalls)
+                {
+                    string? toolResultJson = null;
+
+                    foreach (var toolClass in allToolClasses)
+                    {
+                        toolResultJson = await ToolReflectionEngine.ExecuteToolAsync(
+                            toolClass,
+                            toolCall.FunctionName,
+                            toolCall.FunctionArguments.ToString() ?? "{}"
+                        );
+                        if (toolResultJson != null) break;
+                    }
+
+                    toolResultJson ??= "{\"error\": \"Tool not found in backend.\"}";
+
+                    messages.Add(new ToolChatMessage(toolCall.Id, toolResultJson));
+                }
+            }
+            else
+            {
+                requiresAction = false; 
+            }
+        }
+
+        return completion?.Content[0].Text ?? "Error: No response generated.";
 
     }
+
 }

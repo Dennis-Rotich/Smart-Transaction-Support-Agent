@@ -5,7 +5,7 @@ using ModelContextProtocol.Server;
 using TransactionService.Application.Transactions.Commands;
 using TransactionService.Application.Transactions.Queries;
 
-namespace TransactionService.Api.Tools;
+namespace TransactionService.Infrastructure.Tools;
 
 [McpServerToolType]
 public class TransactionTools

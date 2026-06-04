@@ -4,7 +4,7 @@ using MediatR;
 using ModelContextProtocol.Server;
 using TransactionService.Application.Transactions.Queries;
 
-namespace TransactionService.Api.Tools;
+namespace TransactionService.Infrastructure.Tools;
 
 [McpServerToolType]
 public class RetrievalTools
@@ -46,7 +46,7 @@ public class RetrievalTools
     }
 
     [McpServerTool]
-    [Description()]
+    [Description("Searches knowledge base for specific articles, or keywords.")]
     public async Task<string> SearchKnowledge(string query)
     {
         var request = new SearchKnowledgeQuery(query);

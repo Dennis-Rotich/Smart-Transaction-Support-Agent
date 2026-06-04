@@ -1,7 +1,7 @@
 using TransactionService.Infrastructure;
 using TransactionService.Application.Transactions.Commands;
 using ModelContextProtocol.Server;
-using TransactionService.Api.Tools;
+using TransactionService.Infrastructure.Tools;
 using TransactionService.Application.Interfaces;
 using TransactionService.Infrastructure.Persistence.Repositories;
 
@@ -44,14 +44,5 @@ app.UseCors("AllowBlazorUI");
 
 app.MapControllers();
 app.MapMcp("/mcp");
-
-// TO BE DELETED: Temporary endpoint for testing the AI orchestrator service
-app.MapPost("/api/chat/test", async (string prompt, IAiOrchestratorService aiService) =>
-{
-    if(string.IsNullOrWhiteSpace(prompt)) return Results.BadRequest("Prompt cannot be empty.");
-
-    var response = await aiService.GetChatResponseAsync(prompt);
-    return Results.Ok(new {Response = response});
-});
 
 app.Run();

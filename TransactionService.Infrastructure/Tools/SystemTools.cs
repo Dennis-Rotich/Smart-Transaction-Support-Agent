@@ -2,7 +2,7 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using ModelContextProtocol.Server;
 
-namespace TransactionService.Api.Tools;
+namespace TransactionService.Infrastructure.Tools;
 
 [McpServerToolType]
 public class SystemTools
