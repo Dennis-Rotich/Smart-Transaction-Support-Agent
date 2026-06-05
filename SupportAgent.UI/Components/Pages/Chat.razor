@@ -29,6 +29,23 @@
                 </div>
             }
         }
+        @if(_isTyping)
+        {
+            <div class="message-row eldo">
+                <div class="message-bubble" style="opacity:0.8;">
+                    <div class="message-content">Eldo is analyzing...</div>
+                    <span class="" role="status" aria-hidden="true"></span>
+                </div>
+            </div>
+        }
+        @if(!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="message-row eldo">
+                <div class="message-bubble error">
+                    <div class="message-content">@_errorMessage</div>
+                </div>
+            </div>
+        }
     </div>
 
     @if(selectedFile != null)
@@ -44,7 +61,7 @@
     @if(!string.IsNullOrEmpty(FileError))
     {
         <div class="file-error-text">@FileError</div>
-    }   )
+    }   
 
     <div class="chat-input-area">
         <div class="upload-wrapper">
@@ -80,6 +97,9 @@
 
     private const long MaxFileSize = 5 * 1024 * 1024;
     private readonly string[] AllowedExtensions = new[] { ".txt", ".md", ".pdf", ".csv", ".log" };
+
+    private bool _isTyping = false;
+    private string _errorMessage = string.Empty;
 
     private void HandleFileSelected(InputFileChangeEventArgs e)
     {
@@ -130,9 +150,9 @@
                 var uploadResult = await UploadService.UploadDocumentAsync(selectedFile);
 
                 if(uploadResult != null){
-                    Messages.Add(new ChatMessage { Role = "System", Content = "File successfully stored." });
+                    Messages.Add(new ChatMessage { Role = "Eldo", Content = "File successfully stored." });
                 } else{
-                    Messages.Add(new ChatMessage { Role = "System", Content = "File upload failed." });
+                    Messages.Add(new ChatMessage { Role = "Eldo", Content = "File upload failed." });
                 }
 
                 selectedFile = null;
@@ -140,20 +160,38 @@
             }
 
             if(!string.IsNullOrWhiteSpace(CurrentPrompt)){
+                Messages.Add(new ChatMessage { Role = "User", Content = CurrentPrompt });
                 var userText = CurrentPrompt;
                 CurrentPrompt = string.Empty;
-            
-                Messages.Add(new ChatMessage { Role = "User", Content = userText });
+
+                _isTyping = true;
+                _errorMessage = string.Empty;
                 StateHasChanged(); 
 
-                var backendResponse = await McpService.SendPromptAsync(userText);
-                Messages.Add(new ChatMessage { Role = "System", Content = backendResponse });
+                try
+                {
+                    var response = await McpService.SendPromptAsync(userText);
+                    Messages.Add(new ChatMessage { Role = "Eldo", Content = response, Timestamp = DateTime.Now });
+                }
+                catch (TaskCanceledException)
+                {
+                    _errorMessage = "The analysis took too long and timed out. Please try again.";
+                }
+                catch (Exception ex)
+                {
+                    _errorMessage = $"System Error: {ex.Message}";
+                }
+                finally
+                {
+                    _isTyping = false;
+                    StateHasChanged();
+                }
             }     
         } catch(Exception ex)
         {
             Messages.Add(new ChatMessage
             {
-                Role = "system",
+                Role = "Eldo",
                 Content = $"Error: {ex.Message}",
                 Timestamp = DateTime.Now
             });

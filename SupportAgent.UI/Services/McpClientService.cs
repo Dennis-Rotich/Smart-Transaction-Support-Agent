@@ -22,6 +22,8 @@ public class McpClientService
     {
         try
         {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(45));
+
             var payload = new { prompt = userInput };
             var jsonString = JsonSerializer.Serialize(payload);
 
@@ -34,8 +36,7 @@ public class McpClientService
 
             if (!response.IsSuccessStatusCode)
             {
-                var errorDetail = await response.Content.ReadAsStringAsync();
-                return $"[Orchestrator Error: {response.StatusCode}] {errorDetail}";
+                throw new HttpRequestException($"Connection issue (Code: {response.StatusCode}).");
             }
 
             var rawResponse = await response.Content.ReadAsStringAsync();
@@ -59,10 +60,14 @@ public class McpClientService
             {
                 return rawResponse;
             }
+            catch (TaskCanceledException)
+            {
+                throw new TaskCanceledException("Sorry, the analysis took too long. Could you try asking that in a simpler way?");
+            }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return $"[Connection Error: Failed to reach Orchestrator API. {ex.Message}]";
+            throw new Exception("An unexpected error occurred while processing your request.");
         }
     }
 
