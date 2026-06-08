@@ -62,7 +62,6 @@ public static class ToolReflectionEngine
     {
         try
         {
-            // 1. Hunt down the matching method across all your injected classes
             foreach (var instance in toolClasses)
             {
                 var method = instance.GetType().GetMethods()
@@ -72,7 +71,6 @@ public static class ToolReflectionEngine
 
                 if (method != null)
                 {
-                    // 2. Parse the JSON arguments provided by the AI
                     var argsDict = string.IsNullOrWhiteSpace(argumentsJson)
                         ? new Dictionary<string, JsonElement>()
                         : JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(argumentsJson);
@@ -80,58 +78,50 @@ public static class ToolReflectionEngine
                     var parameters = method.GetParameters();
                     var invokeArgs = new object?[parameters.Length];
 
-                    // 3. Map the AI's JSON values to the C# method parameters
                     for (int i = 0; i < parameters.Length; i++)
                     {
                         var param = parameters[i];
                         if (argsDict != null && argsDict.TryGetValue(param.Name!, out var jsonElement))
                         {
-                            // Convert the JSON element into the exact C# type (string, int, decimal, etc.)
                             invokeArgs[i] = jsonElement.Deserialize(param.ParameterType);
                         }
                         else if (param.HasDefaultValue)
                         {
-                            invokeArgs[i] = param.DefaultValue; // Fallback to your C# default values
+                            invokeArgs[i] = param.DefaultValue;
                         }
                         else
                         {
-                            invokeArgs[i] = null; // AI omitted it and no default exists
+                            invokeArgs[i] = null;
                         }
                     }
 
-                    // 4. Invoke the method dynamically
                     var result = method.Invoke(instance, invokeArgs);
 
-                    // 5. Handle async Tasks seamlessly
                     if (result is Task task)
                     {
-                        await task; // Wait for the database/logic to finish
+                        await task;
 
                         var taskType = task.GetType();
                         if (taskType.IsGenericType)
                         {
-                            // Extract the result from Task<T>
                             var resultProperty = taskType.GetProperty("Result");
                             result = resultProperty?.GetValue(task);
                         }
                         else
                         {
-                            return "Success"; // Method was a plain Task (void)
+                            return "Success";
                         }
                     }
 
-                    // 6. Convert the final C# object back into a JSON string for the AI to read
                     if (result is string stringResult) return stringResult;
                     return JsonSerializer.Serialize(result);
                 }
             }
 
-            // If the loop finishes and nothing was found
             return $"{{\"error\": \"Tool '{functionName}' not found in backend.\"}}";
         }
         catch (Exception ex)
         {
-            // Catch EF Core crashes, null references, etc., and tell the AI it failed
             return $"{{\"error\": \"Backend execution failed: {ex.InnerException?.Message ?? ex.Message}\"}}";
         }
     }

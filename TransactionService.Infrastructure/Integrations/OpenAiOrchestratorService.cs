@@ -70,7 +70,7 @@ public class OpenAiOrchestratorService : IAiOrchestratorService
         }
 
         bool requiresAction = true;
-        int maxIterations = 5; // Guard against infinite loops
+        int maxIterations = 5;
         int currentIteration = 0;
 
         while (requiresAction && currentIteration < maxIterations)
@@ -80,7 +80,6 @@ public class OpenAiOrchestratorService : IAiOrchestratorService
 
             var completion = await _chatClient.CompleteChatAsync(messages, options);
 
-            // CRITICAL STEP 1: Always add the AI's response (even if it's a tool call request) to the history!
             messages.Add(ChatMessage.CreateAssistantMessage(completion.Value));
 
             if (completion.Value.FinishReason == ChatFinishReason.ToolCalls)
@@ -92,7 +91,7 @@ public class OpenAiOrchestratorService : IAiOrchestratorService
                     _logger.LogInformation("Executing Tool: {Name} with Args: {Args}",
                         toolCall.FunctionName,
                         toolCall.FunctionArguments.ToString());
-                    // Execute your tool using reflection
+
                     string toolResult = await ToolReflectionEngine.ExecuteToolAsync(
                         toolCall.FunctionName,
                         toolCall.FunctionArguments.ToString(),
@@ -100,16 +99,13 @@ public class OpenAiOrchestratorService : IAiOrchestratorService
 
                     _logger.LogInformation("Executed '{Name}'. Result length: {Len}", toolCall.FunctionName, toolResult.Length);
 
-                    // CRITICAL STEP 2: Feed the result back, explicitly linked to the ToolCallId
                     messages.Add(ChatMessage.CreateToolMessage(toolCall.Id, toolResult));
                 }
 
-                // Keep the loop going so OpenAI can look at the tool results and answer
                 requiresAction = true;
             }
             else
             {
-                // The AI didn't call a tool; it returned a normal text reply. We are done!
                 _logger.LogInformation("AI finished processing. Reason: {Reason}", completion.Value.FinishReason);
                 requiresAction = false;
                 return completion.Value.Content[0].Text;
