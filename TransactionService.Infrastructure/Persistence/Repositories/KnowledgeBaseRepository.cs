@@ -38,6 +38,7 @@ public class KnowledgeBaseRepository : IKnowledgeBaseRepository
             return new KnowledgeResultDto(
                     k.Title ?? "Untitled Article",
                     k.Excerpt ?? "No excerpt available.",
+                    k.Content ?? "No content available.",
                     simulatedScore
                 );
         });

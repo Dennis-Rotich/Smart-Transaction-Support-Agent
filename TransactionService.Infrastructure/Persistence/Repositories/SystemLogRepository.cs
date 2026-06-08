@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using TransactionService.Application.Interfaces;
 using TransactionService.Application.Transactions.Queries;
 using TransactionService.Application.Transactions.DTOs;
+using TransactionService.Domain.Enums;
 
 namespace TransactionService.Infrastructure.Persistence.Repositories;
 
@@ -19,28 +20,34 @@ public class SystemLogRepository : ISystemLogRepository
     public async Task<IEnumerable<LogResultDto>> SearchLogsAsync(string query, string dateRange)
     {
         var dbQuery = _context.TransactionLogs.AsQueryable();
-
         var now = DateTime.UtcNow;
-        if (dateRange.Contains("last 7 days", StringComparison.OrdinalIgnoreCase))
+
+        if(!string.IsNullOrWhiteSpace(dateRange))
         {
-            var cutoff = now.AddDays(-7);
-            dbQuery = dbQuery.Where(log => log.CreatedAt >= cutoff);
-        }
-        else if (dateRange.Contains("to"))
-        {
-            var dates = dateRange.Split("to", StringSplitOptions.TrimEntries);
-            if (dates.Length == 2 && DateTime.TryParse(dates[0], out var startDate) && DateTime.TryParse(dates[1], out var endDate))
+            if (dateRange.Contains("last 7 days", StringComparison.OrdinalIgnoreCase))
             {
-                dbQuery = dbQuery.Where(log => log.CreatedAt >= startDate && log.CreatedAt <= endDate);
+                var cutoff = now.AddDays(-7);
+                dbQuery = dbQuery.Where(log => log.CreatedAt >= cutoff);
+            }
+            else if (dateRange.Contains("to"))
+            {
+                var dates = dateRange.Split("to", StringSplitOptions.TrimEntries);
+                if (dates.Length == 2 && DateTime.TryParse(dates[0], out var startDate) && DateTime.TryParse(dates[1], out var endDate))
+                {
+                    dbQuery = dbQuery.Where(log => log.CreatedAt >= startDate && log.CreatedAt <= endDate);
+                }
             }
         }
 
         if(!string.IsNullOrWhiteSpace(query))
         {
+            bool isEnumMatch = Enum.TryParse<EventType>(query, true, out var parsedType);
+
             dbQuery = dbQuery.Where(l =>
                 (l.Message != null && l.Message.Contains(query)) ||
-                (l.ProviderResponseCode != null && l.ProviderResponseCode.Contains(query)) ||
-                (l.Type.ToString().Contains(query)));
+                (l.ProviderResponseCode != null && l.ProviderResponseCode.Contains(query))
+                || (isEnumMatch && l.Type == parsedType)
+            );
         }
 
         var logs = await dbQuery.OrderByDescending(log => log.CreatedAt)

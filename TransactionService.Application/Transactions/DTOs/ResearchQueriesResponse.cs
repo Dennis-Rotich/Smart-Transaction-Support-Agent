@@ -10,4 +10,4 @@ public record DocumentResultDto(string Title, string Version, string Content);
 
 
 // Knowledge search
-public record KnowledgeResultDto(string Title, string Excerpt, double Score);
+public record KnowledgeResultDto(string Title, string Excerpt, string Content, double Score);

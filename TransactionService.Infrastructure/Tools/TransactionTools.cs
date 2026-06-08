@@ -19,7 +19,7 @@ public class TransactionTools
 
     [McpServerTool]
     [Description("Creates a new Pesapal payment order. Requires customer name, email, amount, and a unique reference. Returns the generated tracking ID and payment link.")]
-    public async Task<string> CreatePaymentOrder(string currency, decimal amount)
+    public async Task<string> CreatePaymentOrder([Description("The currency for the transaction in three capitalized words, e.g, KES")]string currency, [Description("The exact amount to be charged")]decimal amount)
     {
         var command = new CreateTransactionCommand(amount, currency);
 
@@ -30,7 +30,7 @@ public class TransactionTools
 
     [McpServerTool]
     [Description("Checks the current payment status of a transaction using the reference.")]
-    public async Task<string> CheckTransactionStatus(string reference)
+    public async Task<string> CheckTransactionStatus([Description("The reference of the transaction e.g, TXN-A0078DD3")]string reference)
     {
         var query = new GetTransactionStatusQuery(reference);
         var result = await _mediator.Send(query);
@@ -43,7 +43,7 @@ public class TransactionTools
 
     [McpServerTool]
     [Description("Retrieves the full, detailed information for a specific transaction using its reference ID.")]
-    public async Task<string> GetTransactionDetails(string reference)
+    public async Task<string> GetTransactionDetails([Description("The reference of the transaction e.g, TXN-A0078DD3")]string reference)
     {
         var query = new GetTransactionDetailsQuery(reference);
         var result = await _mediator.Send(query);

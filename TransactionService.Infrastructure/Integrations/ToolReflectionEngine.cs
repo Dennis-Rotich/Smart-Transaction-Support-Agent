@@ -12,72 +12,154 @@ namespace TransactionService.Infrastructure.Integrations;
 
 public static class ToolReflectionEngine
 {
-    public static IEnumerable<ChatTool> GenerateTools(object toolClassInstance)
+    public static IEnumerable<ChatTool> GenerateTools(IEnumerable<object> toolClassInstances)
     {
         var tools = new List<ChatTool>();
 
-        var methods = toolClassInstance.GetType().GetMethods()
-            .Where(m => m.GetCustomAttribute<McpServerToolAttribute>() != null);
+        foreach (var instance in toolClassInstances)
+        {
+            var methods = instance.GetType().GetMethods()
+                .Where(m => m.GetCustomAttribute<McpServerToolAttribute>() != null);
 
-        foreach (var method in methods){
-            var mcpAttr = method.GetCustomAttribute<McpServerToolAttribute>();
-            var descAttr = method.GetCustomAttribute<DescriptionAttribute>();
-
-            var description = descAttr?.Description ?? "No description provided.";
-            var parameters = method.GetParameters();
-
-
-            var properties = new Dictionary<string, object>();
-            var required = new List<string>();
-
-            foreach (var param in parameters)
+            foreach (var method in methods)
             {
-                properties.Add(param.Name!, new { type = "string", description = $"Parameter: {param.Name}" });
-                required.Add(param.Name!);
+                var mcpAttr = method.GetCustomAttribute<McpServerToolAttribute>();
+                var descAttr = method.GetCustomAttribute<DescriptionAttribute>();
+                var description = descAttr?.Description ?? "No description provided.";
+                var parameters = method.GetParameters();
+
+                var properties = new Dictionary<string, object>();
+                var required = new List<string>();
+
+                foreach (var param in parameters)
+                {
+                    var paramDescAttr = param.GetCustomAttribute<DescriptionAttribute>();
+                    var paramDescription = paramDescAttr?.Description ?? $"Parameter: {param.Name}";
+                    var jsonType = MapCSharpTypeToJsonType(param.ParameterType);
+
+                    properties.Add(param.Name!, new { type = jsonType, description = paramDescription });
+
+                    if (!param.HasDefaultValue)
+                    {
+                        required.Add(param.Name!);
+                    }
+                }
+
+                var functionJson = new { type = "object", properties = properties, required = required };
+
+                tools.Add(ChatTool.CreateFunctionTool(
+                     mcpAttr!.Name ?? method.Name,
+                     description,
+                     BinaryData.FromObjectAsJson(functionJson)
+                ));
             }
-
-            var functionJson = new
-            {
-                type = "object",
-                properties = properties,
-                required = required
-            };
-
-            tools.Add(ChatTool.CreateFunctionTool(
-                 mcpAttr!.Name ?? method.Name,
-                 description,
-                 BinaryData.FromObjectAsJson(functionJson)
-            ));
         }
 
         return tools;
     }
 
-    public static async Task<string> ExecuteToolAsync(object toolClassInstance, string toolName, string jsonArguments)
+    public static async Task<string> ExecuteToolAsync(string functionName, string argumentsJson, IEnumerable<object> toolClasses)
     {
-        var method = toolClassInstance.GetType().GetMethods()
-            .FirstOrDefault(m => m.GetCustomAttribute<McpServerToolAttribute>()?.Name == toolName || m.Name == toolName);
-
-        if(method == null) return $"Tool '{toolName}' not found.";
-
-        using var doc = JsonDocument.Parse(jsonArguments);
-        var parameters = method.GetParameters();
-        var args = new object[parameters.Length];
-
-        for(int i = 0; i < parameters.Length; i++)
+        try
         {
-            var propName = parameters[i].Name;
-            if(doc.RootElement.TryGetProperty(propName!,out var element))
+            // 1. Hunt down the matching method across all your injected classes
+            foreach (var instance in toolClasses)
             {
-                args[i] = element.GetString()!;
+                var method = instance.GetType().GetMethods()
+                    .FirstOrDefault(m =>
+                        m.GetCustomAttribute<McpServerToolAttribute>()?.Name == functionName ||
+                        m.Name == functionName);
+
+                if (method != null)
+                {
+                    // 2. Parse the JSON arguments provided by the AI
+                    var argsDict = string.IsNullOrWhiteSpace(argumentsJson)
+                        ? new Dictionary<string, JsonElement>()
+                        : JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(argumentsJson);
+
+                    var parameters = method.GetParameters();
+                    var invokeArgs = new object?[parameters.Length];
+
+                    // 3. Map the AI's JSON values to the C# method parameters
+                    for (int i = 0; i < parameters.Length; i++)
+                    {
+                        var param = parameters[i];
+                        if (argsDict != null && argsDict.TryGetValue(param.Name!, out var jsonElement))
+                        {
+                            // Convert the JSON element into the exact C# type (string, int, decimal, etc.)
+                            invokeArgs[i] = jsonElement.Deserialize(param.ParameterType);
+                        }
+                        else if (param.HasDefaultValue)
+                        {
+                            invokeArgs[i] = param.DefaultValue; // Fallback to your C# default values
+                        }
+                        else
+                        {
+                            invokeArgs[i] = null; // AI omitted it and no default exists
+                        }
+                    }
+
+                    // 4. Invoke the method dynamically
+                    var result = method.Invoke(instance, invokeArgs);
+
+                    // 5. Handle async Tasks seamlessly
+                    if (result is Task task)
+                    {
+                        await task; // Wait for the database/logic to finish
+
+                        var taskType = task.GetType();
+                        if (taskType.IsGenericType)
+                        {
+                            // Extract the result from Task<T>
+                            var resultProperty = taskType.GetProperty("Result");
+                            result = resultProperty?.GetValue(task);
+                        }
+                        else
+                        {
+                            return "Success"; // Method was a plain Task (void)
+                        }
+                    }
+
+                    // 6. Convert the final C# object back into a JSON string for the AI to read
+                    if (result is string stringResult) return stringResult;
+                    return JsonSerializer.Serialize(result);
+                }
             }
-        }
 
-        if(method.ReturnType == typeof(Task<string>))
+            // If the loop finishes and nothing was found
+            return $"{{\"error\": \"Tool '{functionName}' not found in backend.\"}}";
+        }
+        catch (Exception ex)
         {
-            return await (Task<string>)method.Invoke(toolClassInstance, args)!;
+            // Catch EF Core crashes, null references, etc., and tell the AI it failed
+            return $"{{\"error\": \"Backend execution failed: {ex.InnerException?.Message ?? ex.Message}\"}}";
+        }
+    }
+
+    public static string MapCSharpTypeToJsonType(Type type)
+    {
+        var underlyingType = Nullable.GetUnderlyingType(type) ?? type;
+
+        if(underlyingType == typeof(int) || underlyingType == typeof(long) || underlyingType == typeof(short))
+        {
+            return "integer";
         }
 
-        return "{\"error\": \"Tool execution failed due to unsupported return type.\"}";
+        if (underlyingType == typeof(double) || underlyingType == typeof(float) || underlyingType == typeof(decimal))
+        {
+            return "number";
+        }
+
+        if (underlyingType == typeof(bool))
+        {
+            return "boolean";
+        }
+
+        if(underlyingType.IsArray || typeof(System.Collections.IEnumerable).IsAssignableFrom(underlyingType) && underlyingType != typeof(string))
+        {
+            return "array";
+        }
+
+        return "string";
     }
 }

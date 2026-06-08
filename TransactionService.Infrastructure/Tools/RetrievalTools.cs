@@ -18,9 +18,12 @@ public class RetrievalTools
 
     [McpServerTool]
     [Description("Searches uploaded system and provider logs for specific errors, events, or keywords. 'dateRange' should be formatted like 'YYYY-MM-DD to YYYY-MM-DD' or 'last 7 days'.")]
-    public async Task<string> SearchLogs(string query, string dateRange)
-    {
-        var request = new SearchLogsQuery(query, dateRange);
+    public async Task<string> SearchLogs([Description("A free-text substring search term. It searches across the log's Message, ProviderResponseCode, and Type. Pass an empty string if no text filtering is needed.")] string query, [Description("The time window for the search. MUST be formatted in one of two strict ways: either the exact phrase 'last 7 days', OR a start and end date separated by the word 'to' (e.g., '2023-10-01 to 2023-10-31').")] string dateRange)
+    {   
+        var safeQuery = query ?? string.Empty;
+        var safeDateRange = dateRange ?? "last 7 days";
+
+        var request = new SearchLogsQuery(safeQuery, safeDateRange);
         var result = await _mediator.Send(request);
         
         if(result?.Any() != true)
@@ -35,7 +38,7 @@ public class RetrievalTools
 
     [McpServerTool]
     [Description("Retrieves the full text of specific uploaded fintech or system documentation using its Document ID.")]
-    public async Task<string> GetDocument(string documentId)
+    public async Task<string> GetDocument([Description("The exact document Id for the specific document, e.g, 2ce63250-b77e-4d8b-a4d3-70209bf8d35f")]string documentId)
     {
         var request = new GetDocumentQuery(documentId);
         var result = await _mediator.Send(request);
@@ -47,14 +50,14 @@ public class RetrievalTools
 
     [McpServerTool]
     [Description("Searches knowledge base for specific articles, or keywords.")]
-    public async Task<string> SearchKnowledge(string query)
+    public async Task<string> SearchKnowledge([Description("A free-text substring search term. It searches across the knowledge base's Title, Excerpt, and Content. Pass an empty string if no text filtering is needed.")] string query)
     {
         var request = new SearchKnowledgeQuery(query);
         var result = await _mediator.Send(request);
 
         if(result?.Any() != true) return $"No knowledge base articles found matching '{query}'.";
 
-        var formattedArticles = string.Join("\n", result.Select(a => $"Title: {a.Title}\nExcerpt: {a.Excerpt}\nRelevance Score: {a.Score}"));
+        var formattedArticles = string.Join("\n", result.Select(a => $"Title: {a.Title}\nExcerpt: {a.Excerpt}\nContent: {a.Content}\nRelevance Score: {a.Score}"));
 
         return $"Knowledge Base Results for '{query}':\n\n{formattedArticles}";
     }
