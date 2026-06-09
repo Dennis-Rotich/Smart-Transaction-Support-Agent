@@ -1,4 +1,4 @@
-using TransactionService.Domain.Repositories;
+using TransactionService.Application.Interfaces;
 
 namespace TransactionService.Infrastructure.Persistence.Repositories;
 

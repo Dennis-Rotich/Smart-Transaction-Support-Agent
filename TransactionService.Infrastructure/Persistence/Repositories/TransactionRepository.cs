@@ -1,5 +1,5 @@
 using TransactionService.Domain.Entities;
-using TransactionService.Domain.Repositories;
+using TransactionService.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace TransactionService.Infrastructure.Persistence.Repositories;

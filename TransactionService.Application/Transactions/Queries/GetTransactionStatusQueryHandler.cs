@@ -1,5 +1,5 @@
 using MediatR;
-using TransactionService.Domain.Repositories;
+using TransactionService.Application.Interfaces;
 using TransactionService.Application.Transactions.DTOs;
 
 namespace TransactionService.Application.Transactions.Queries;

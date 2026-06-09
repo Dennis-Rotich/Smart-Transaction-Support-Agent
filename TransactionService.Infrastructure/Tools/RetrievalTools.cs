@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using MediatR;
 using ModelContextProtocol.Server;
+using Microsoft.Extensions.Logging;
 using TransactionService.Application.Transactions.Queries;
 
 namespace TransactionService.Infrastructure.Tools;
@@ -10,10 +11,12 @@ namespace TransactionService.Infrastructure.Tools;
 public class RetrievalTools
 {
     private readonly IMediator _mediator;
+    private readonly ILogger _logger;
 
-    public RetrievalTools(IMediator mediator)
+    public RetrievalTools(IMediator mediator, ILogger<RetrievalTools> logger)
     {
         _mediator = mediator;
+        _logger = logger;
     }
 
     [McpServerTool]
@@ -27,7 +30,8 @@ public class RetrievalTools
         var result = await _mediator.Send(request);
         
         if(result?.Any() != true)
-        {
+        {   
+            _logger.LogInformation("No logs found matching query '{Query}' in range '{DateRange}'.", safeQuery, safeDateRange);
             return $"No logs found matching query '{query}' in range '{dateRange}'.";
         }
 
@@ -43,7 +47,11 @@ public class RetrievalTools
         var request = new GetDocumentQuery(documentId);
         var result = await _mediator.Send(request);
 
-        if(result == null) return $"Error: Document with ID '{documentId}' could not be found in the repository.";
+        if(result == null)
+        {   
+            _logger.LogWarning("Document with ID '{DocumentId}' not found in repository.", documentId);
+            return $"Error: Document with ID '{documentId}' could not be found in the repository.";
+        } 
 
         return $"--- Document: {result.Title} ---\nVersion: {result.Version}\n\n{result.Content}";
     }
@@ -55,7 +63,11 @@ public class RetrievalTools
         var request = new SearchKnowledgeQuery(query);
         var result = await _mediator.Send(request);
 
-        if(result?.Any() != true) return $"No knowledge base articles found matching '{query}'.";
+        if(result?.Any() != true)
+        {   
+            _logger.LogInformation("No knowledge base articles found matching query '{Query}'.", query);
+            return $"No knowledge base articles found matching '{query}'.";
+        }
 
         var formattedArticles = string.Join("\n", result.Select(a => $"Title: {a.Title}\nExcerpt: {a.Excerpt}\nContent: {a.Content}\nRelevance Score: {a.Score}"));
 

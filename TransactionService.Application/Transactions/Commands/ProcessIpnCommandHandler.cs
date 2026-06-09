@@ -1,6 +1,5 @@
 using MediatR;
 using TransactionService.Application.Interfaces;
-using TransactionService.Domain.Repositories;
 
 namespace TransactionService.Application.Transactions.Commands;
 

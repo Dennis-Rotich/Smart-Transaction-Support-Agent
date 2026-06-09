@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using TransactionService.Domain.Repositories;
+using TransactionService.Application.Interfaces;
 using TransactionService.Application.Transactions.DTOs;
 
 namespace TransactionService.Application.Transactions.Queries;

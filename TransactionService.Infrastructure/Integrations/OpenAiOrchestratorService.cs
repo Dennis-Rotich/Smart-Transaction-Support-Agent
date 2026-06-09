@@ -95,7 +95,7 @@ public class OpenAiOrchestratorService : IAiOrchestratorService
                     string toolResult = await ToolReflectionEngine.ExecuteToolAsync(
                         toolCall.FunctionName,
                         toolCall.FunctionArguments.ToString(),
-                        toolClasses);
+                        toolClasses, _logger);
 
                     _logger.LogInformation("Executed '{Name}'. Result length: {Len}", toolCall.FunctionName, toolResult.Length);
 

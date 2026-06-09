@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using OpenAI.Chat;
 using ModelContextProtocol.Server;
+using Microsoft.Extensions.Logging;
 
 namespace TransactionService.Infrastructure.Integrations;
 
@@ -58,7 +59,7 @@ public static class ToolReflectionEngine
         return tools;
     }
 
-    public static async Task<string> ExecuteToolAsync(string functionName, string argumentsJson, IEnumerable<object> toolClasses)
+    public static async Task<string> ExecuteToolAsync(string functionName, string argumentsJson, IEnumerable<object> toolClasses, ILogger logger)
     {
         try
         {
@@ -118,10 +119,12 @@ public static class ToolReflectionEngine
                 }
             }
 
+            logger.LogWarning("Tool not found: {FunctionName} with args: {Arguments}", functionName, argumentsJson);
             return $"{{\"error\": \"Tool '{functionName}' not found in backend.\"}}";
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "Error executing tool: {FunctionName} with args: {Arguments}", functionName, argumentsJson);
             return $"{{\"error\": \"Backend execution failed: {ex.InnerException?.Message ?? ex.Message}\"}}";
         }
     }

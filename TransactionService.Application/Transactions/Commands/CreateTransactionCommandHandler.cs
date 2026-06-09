@@ -1,7 +1,6 @@
 using MediatR;
 using TransactionService.Domain.Entities;
 using TransactionService.Domain.Enums;
-using TransactionService.Domain.Repositories;
 using TransactionService.Application.Transactions.DTOs;
 using TransactionService.Application.Interfaces;
 

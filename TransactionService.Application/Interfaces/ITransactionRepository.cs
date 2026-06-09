@@ -1,6 +1,6 @@
 using TransactionService.Domain.Entities;
 
-namespace TransactionService.Domain.Repositories;
+namespace TransactionService.Application.Interfaces;
 
 public interface ITransactionRepository : IRepository<Transaction>
 {

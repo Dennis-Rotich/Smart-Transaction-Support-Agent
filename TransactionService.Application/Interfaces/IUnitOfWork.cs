@@ -1,4 +1,4 @@
-namespace TransactionService.Domain.Repositories;
+namespace TransactionService.Application.Interfaces;
 
 public interface IUnitOfWork : IDisposable
 {

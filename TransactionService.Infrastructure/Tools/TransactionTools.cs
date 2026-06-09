@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using MediatR;
 using ModelContextProtocol.Server;
+using Microsoft.Extensions.Logging;
 using TransactionService.Application.Transactions.Commands;
 using TransactionService.Application.Transactions.Queries;
 
@@ -11,10 +12,12 @@ namespace TransactionService.Infrastructure.Tools;
 public class TransactionTools
 {
     private readonly IMediator _mediator;
+    private readonly ILogger _logger;
 
-    public TransactionTools(IMediator mediator)
+    public TransactionTools(IMediator mediator, ILogger<TransactionTools> logger)
     {
         _mediator = mediator;
+        _logger = logger;
     }
 
     [McpServerTool]
@@ -35,7 +38,8 @@ public class TransactionTools
         var query = new GetTransactionStatusQuery(reference);
         var result = await _mediator.Send(query);
         if(result == null)
-        {
+        {   
+            _logger.LogWarning("No transaction found matching reference '{Reference}'.", reference);
             return $"Error: No transaction found matching reference '{reference}'.";
         }
         return $"Transaction Status for '{reference}': {result.Status}";
@@ -48,7 +52,11 @@ public class TransactionTools
         var query = new GetTransactionDetailsQuery(reference);
         var result = await _mediator.Send(query);
 
-        if(result == null) return $"Error: No transaction details found for reference '{reference}'.";
+        if(result == null)
+        {   
+            _logger.LogWarning("No transaction details found for reference '{Reference}'.", reference);
+            return $"Error: No transaction details found for reference '{reference}'.";
+        }
 
         var detailsBlock = $@"Transaction Details for '{reference}':
             - Reference: {result.Reference}
@@ -83,7 +91,11 @@ public class TransactionTools
         var query = new ListRecentTransactionsQuery(10);
         var result = await _mediator.Send(query);
 
-        if(result == null || !result.Any()) return "No recent transactions found.";
+        if(result == null || !result.Any())
+        {   
+            _logger.LogInformation("No recent transactions found.");
+            return "No recent transactions found.";
+        }
 
         var formattedList = string.Join("\n", result.Select(r => $"- Ref: {r.Reference} | Amount: {r.Amount} | Status: {r.Status} | Date: {r.CreatedAt:g}"));
 
