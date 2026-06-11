@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using TransactionService.Application.Interfaces;
+using TransactionService.Application.Transactions.DTOs;
 
 namespace TransactionService.Infrastructure.Integrations;
 
@@ -88,7 +89,7 @@ public class PesapalGatewayService : IPaymentGatewayService
         return (redirectUrl, orderTrackingId);
     }
 
-    public async Task<(string Status, string ProviderReference)> GetTransactionStatusAsync(string token, string orderTrackingId)
+    public async Task<PesapalStatusResponse> GetTransactionStatusAsync(string token, string orderTrackingId)
     {
         _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
@@ -99,9 +100,17 @@ public class PesapalGatewayService : IPaymentGatewayService
         using var jsonDoc = JsonDocument.Parse(content);
         var root = jsonDoc.RootElement;
 
-        string status = root.GetProperty("payment_status_description").GetString()!;
-        string providerReference = root.GetProperty("payment_account").GetString()!;
+        string statusDesc = root.GetProperty("payment_status_description").GetString() ?? "Pending";
+        string? paymentMethod = root.TryGetProperty("payment_method", out var pm) ? pm.GetString() : null;
+        string? confirmationCode = root.TryGetProperty("confirmation_code", out var cc) ? cc.GetString() : null;
+        string? paymentAccount = root.TryGetProperty("payment_account", out var pa) ? pa.GetString() : null;
+        string? description = root.TryGetProperty("description", out var desc) ? desc.GetString() : null;
 
-        return (status, providerReference);
+        return new PesapalStatusResponse(
+        statusDesc,
+        paymentMethod,
+        confirmationCode,
+        paymentAccount,
+        description);
     }
 }

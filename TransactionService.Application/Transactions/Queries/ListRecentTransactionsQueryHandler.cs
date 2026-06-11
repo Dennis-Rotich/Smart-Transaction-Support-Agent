@@ -22,7 +22,10 @@ public class  ListRecentTransactionsQueryHandler : IRequestHandler<ListRecentTra
         var transactions = await _repository.GetRecentTransactionsAsync(request.Limit);
 
         return transactions.Select(t => new RecentTransactionResponse(
-            t.Reference,
+            t.MerchantReference,
+            t.TransactionReference,
+            t.PaymentMethod,
+            t.OrderTrackingId,
             t.Amount,
             t.Currency,
             t.Status.ToString(),

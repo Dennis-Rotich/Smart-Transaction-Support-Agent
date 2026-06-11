@@ -17,12 +17,15 @@ public class GetTransactionDetailsQueryHandler : IRequestHandler<GetTransactionD
 
     public async Task<TransactionDetailResponse?> Handle (GetTransactionDetailsQuery request, CancellationToken cancellationToken)
     {
-        var transaction = await _repository.GetByReferenceAsync(request.Reference);
+        var transaction = await _repository.GetByMerchantReferenceAsync(request.Reference);
 
         if (transaction == null) return null;
 
         return new TransactionDetailResponse(
-            transaction.Reference,
+            transaction.MerchantReference,
+            transaction.TransactionReference,
+            transaction.PaymentMethod,
+            transaction.OrderTrackingId,
             transaction.Amount,
             transaction.Currency,
             transaction.Status.ToString(),
@@ -32,7 +35,6 @@ public class GetTransactionDetailsQueryHandler : IRequestHandler<GetTransactionD
                 log.Message,      
                 log.ProviderResponseCode,
                 log.ProviderResponseBody
-            )).ToList(),
-            transaction.ExternalTrackingId);
+            )).ToList());
     }
 }

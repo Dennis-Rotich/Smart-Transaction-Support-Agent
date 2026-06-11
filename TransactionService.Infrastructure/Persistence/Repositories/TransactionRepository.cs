@@ -8,11 +8,11 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
 {
     public TransactionRepository(ApplicationDbContext context) : base(context) { }
     
-    public async Task<Transaction?> GetByReferenceAsync(string reference)
+    public async Task<Transaction?> GetByMerchantReferenceAsync(string merchantReference)
     {
         return await _context.Transactions
             .Include(t => t.Logs)
-            .FirstOrDefaultAsync(t => t.Reference == reference);
+            .FirstOrDefaultAsync(t => t.MerchantReference == merchantReference);
     }
 
     public async Task<IReadOnlyList<Transaction>> GetRecentTransactionsAsync(int count)
@@ -27,6 +27,6 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
     {
         return await _context.Transactions
             .Include(t => t.Logs)
-            .FirstOrDefaultAsync(t => t.ExternalTrackingId == trackingId);
+            .FirstOrDefaultAsync(t => t.OrderTrackingId == trackingId);
     }
 }

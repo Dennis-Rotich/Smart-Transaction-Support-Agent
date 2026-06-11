@@ -13,12 +13,16 @@ public class GetTransactionStatusQueryHandler : IRequestHandler<GetTransactionSt
     public async Task<TransactionResponseGet?> Handle(GetTransactionStatusQuery request, CancellationToken cancellationToken)
     {
         Console.WriteLine($"Querying database for reference: '{request.Reference}'");
-        var transaction = await _repository.GetByReferenceAsync(request.Reference);
+        var transaction = await _repository.GetByMerchantReferenceAsync(request.Reference);
 
         if(transaction == null) return null;
 
         return new TransactionResponseGet(
-            transaction.Reference,
+            transaction.MerchantReference,
+            transaction.TransactionReference,
+            transaction.PaymentMethod,
+            transaction.OrderTrackingId,
+            transaction.UpdatedAt,
             transaction.Amount,
             transaction.Currency,
             transaction.Status.ToString(),

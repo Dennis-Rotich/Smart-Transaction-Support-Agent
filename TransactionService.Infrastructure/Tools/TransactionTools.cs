@@ -59,12 +59,14 @@ public class TransactionTools
         }
 
         var detailsBlock = $@"Transaction Details for '{reference}':
-            - Reference: {result.Reference}
+            - Merchant Reference: {result.MerchantReference}
+            - Transaction Reference: {result.TransactionReference}
+            - Payment Method: {result.PaymentMethod}
             - Amount: {result.Amount}
             - Currency: {result.Currency}
             - Date Created: {result.CreatedAt:g}
             - Current Status: {result.Status}
-            - Provider Tracking ID: {result.ExternalTrackingId}";
+            - Provider Tracking ID: {result.OrderTrackingId}";
 
         var logsBlock = "\n\nTransaction History Logs:\n";
 
@@ -97,7 +99,7 @@ public class TransactionTools
             return "No recent transactions found.";
         }
 
-        var formattedList = string.Join("\n", result.Select(r => $"- Ref: {r.Reference} | Amount: {r.Amount} | Status: {r.Status} | Date: {r.CreatedAt:g}"));
+        var formattedList = string.Join("\n", result.Select(r => $"- Merchant Ref: {r.MerchantReference} | Transaction Ref: {r.TransactionReference} | Payment Method: {r.PaymentMethod} | Tracking ID: {r.OrderTrackingId} | Amount: {r.Amount} | Status: {r.Status} | Date: {r.CreatedAt:g}"));
 
         return formattedList;
     }

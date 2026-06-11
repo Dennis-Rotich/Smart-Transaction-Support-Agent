@@ -6,36 +6,64 @@ namespace TransactionService.Domain.Entities
 {
     public class Transaction : BaseEntity
     {
-        public string Reference { get; private set; }
+        public string MerchantReference { get; private set; }
         public decimal Amount { get; private set; }
         public string Currency { get; private set; }
         public TransactionStatus Status { get; private set; }
-        public string? ProviderReference { get; private set; }
+
+        public string? TransactionReference { get; private set; }
+        public string? PaymentMethod { get; private set; }
+        public string? OrderTrackingId { get; private set; }
+
         public DateTime? UpdatedAt { get; private set; }
-        public string? ExternalTrackingId { get; private set; }
 
         public ICollection<TransactionLog> Logs { get; private set; } = new List<TransactionLog>
         ();
 
-        public Transaction(string reference, decimal amount, string currency)
+        public Transaction(string merchantReference, decimal amount, string currency)
         {
-            Reference = reference;
+            MerchantReference = merchantReference;
             Amount = amount;
             Currency = currency;
             Status = TransactionStatus.Pending;
         }
 
-        public void MarkAsSuccess(string providerReference)
+        public void MarkAsCompleted(string? transactionReference, string? description)
         {
-            Status = TransactionStatus.Success;
-            ProviderReference = providerReference;
+            Status = TransactionStatus.Completed;
+            AddLog(EventType.CallbackReceived, description);
+            TransactionReference = transactionReference;
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void MarkAsFailed(string? providerReference = null)
+        public void MarkAsInvalid(string? transactionReference, string? description)
+        {
+            Status = TransactionStatus.Invalid;
+            AddLog(EventType.CallbackReceived, description);
+            TransactionReference = transactionReference;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void MarkAsReversed(string? transactionReference, string? description)
+        {
+            Status = TransactionStatus.Reversed;
+            AddLog(EventType.CallbackReceived, description);
+            TransactionReference = transactionReference;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void MarkAsFailed(string? transactionReference, string? description)
         {
             Status = TransactionStatus.Failed;
-            ProviderReference = providerReference;
+            AddLog(EventType.CallbackReceived, description);
+            TransactionReference = transactionReference;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void LinkExternalTracking(string orderTrackingId)
+        {
+            if (string.IsNullOrWhiteSpace(orderTrackingId)) throw new ArgumentException("Tracking ID cannot be empty.");
+            OrderTrackingId = orderTrackingId;
             UpdatedAt = DateTime.UtcNow;
         }
 
@@ -44,11 +72,5 @@ namespace TransactionService.Domain.Entities
             Logs.Add(new TransactionLog(this.Id, type, message, providerResponseCode, providerResponseBody));
         }
 
-        public void LinkExternalTracking(string orderTrackingId)
-        {   
-            if(string.IsNullOrWhiteSpace(orderTrackingId)) throw new ArgumentException("Tracking ID cannot be empty.");
-            ExternalTrackingId = orderTrackingId;
-            UpdatedAt = DateTime.UtcNow;
-        }
     }
 }

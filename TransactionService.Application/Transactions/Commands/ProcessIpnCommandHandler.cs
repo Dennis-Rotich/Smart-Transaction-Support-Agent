@@ -19,19 +19,28 @@ public class ProcessIpnCommandHandler : IRequestHandler<ProcessIpnCommand, bool>
     public async Task<bool> Handle(ProcessIpnCommand request, CancellationToken cancellationToken)
     {
         var token = await _paymentGateway.GetTokenAsync();
-        var (paymentStatus, providerReference) = await _paymentGateway.GetTransactionStatusAsync(token, request.OrderTrackingId);
+        var (statusDesc,
+        paymentMethod,
+        confirmationCode,
+        paymentAccount,
+        description) = await _paymentGateway.GetTransactionStatusAsync(token, request.OrderTrackingId);
 
         var transaction = await _repository.GetByTrackingIdAsync(request.OrderTrackingId);
         if (transaction == null) return false;
 
-        switch(paymentStatus.ToUpper())
+        switch(statusDesc.ToUpper())
         {
             case "COMPLETED":
-                transaction.MarkAsSuccess(providerReference);
+                transaction.MarkAsCompleted(confirmationCode, description);
                 break;
             case "FAILED":
+                transaction.MarkAsFailed(confirmationCode, description);
+                break;
             case "ÏNVALID":
-                transaction.MarkAsFailed(providerReference);
+                transaction.MarkAsInvalid(confirmationCode, description);
+                break;
+            case "REVERSED":
+                transaction.MarkAsReversed(confirmationCode, description);
                 break;
             default:
                 return true; 

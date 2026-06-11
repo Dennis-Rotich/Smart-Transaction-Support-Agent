@@ -32,13 +32,13 @@ public class CreateTransactionCommandHandler : IRequestHandler<CreateTransaction
 
         var pesapalToken = await _paymentGateway.GetTokenAsync();
 
-        var (checkoutUrl, orderTrackingId) = await _paymentGateway.SubmitOrderAsync(pesapalToken, transaction.Amount, transaction.Currency, transaction.Reference);
+        var (checkoutUrl, orderTrackingId) = await _paymentGateway.SubmitOrderAsync(pesapalToken, transaction.Amount, transaction.Currency, transaction.MerchantReference);
 
         transaction.LinkExternalTracking(orderTrackingId);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new TransactionResponseCreate(
-            transaction.Reference,
+            transaction.MerchantReference,
             transaction.Amount,
             transaction.Currency,
             transaction.Status.ToString(),

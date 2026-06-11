@@ -21,8 +21,8 @@ public class ApplicationDbContext : DbContext
 		// Transaction Configuration
 		modelBuilder.Entity<Transaction>(entity => {
 			entity.HasKey(e => e.Id);
-			entity.Property(e => e.Reference).IsRequired().HasMaxLength(50);
-			entity.HasIndex(e => e.Reference).IsUnique();
+			entity.Property(e => e.MerchantReference).IsRequired().HasMaxLength(50);
+			entity.HasIndex(e => e.MerchantReference).IsUnique();
 			entity.Property(e => e.Amount).HasPrecision(18, 2);
 			entity.Property(e => e.Currency).IsRequired().HasMaxLength(3);
 
@@ -30,10 +30,12 @@ public class ApplicationDbContext : DbContext
 			 .HasConversion(v => v.ToString(), v => (TransactionStatus)Enum.Parse(typeof(TransactionStatus), v))
 			 .HasMaxLength(20);
 
-			entity.Property(e => e.ProviderReference).HasMaxLength(100);
+			entity.Property(e => e.TransactionReference).HasMaxLength(100);
+            entity.Property(e => e.OrderTrackingId).HasMaxLength(100);
+            entity.Property(e => e.PaymentMethod).HasMaxLength(50);
 
-			// Relationship: Transaction -> Many logs
-			entity.HasMany(e => e.Logs)
+            // Relationship: Transaction -> Many logs
+            entity.HasMany(e => e.Logs)
 			 .WithOne(l => l.Transaction)
 			 .HasForeignKey(l => l.TransactionId)
 			 .OnDelete(DeleteBehavior.Cascade);
