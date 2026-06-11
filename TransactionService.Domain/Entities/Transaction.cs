@@ -28,35 +28,39 @@ namespace TransactionService.Domain.Entities
             Status = TransactionStatus.Pending;
         }
 
-        public void MarkAsCompleted(string? transactionReference, string? description)
+        public void MarkAsCompleted(string? transactionReference, string? description, string? paymentMethod)
         {
             Status = TransactionStatus.Completed;
             AddLog(EventType.CallbackReceived, description);
             TransactionReference = transactionReference;
+            PaymentMethod = paymentMethod;
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void MarkAsInvalid(string? transactionReference, string? description)
+        public void MarkAsInvalid(string? transactionReference, string? description, string? paymentMethod)
         {
             Status = TransactionStatus.Invalid;
             AddLog(EventType.CallbackReceived, description);
             TransactionReference = transactionReference;
+            PaymentMethod = paymentMethod;
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void MarkAsReversed(string? transactionReference, string? description)
+        public void MarkAsReversed(string? transactionReference, string? description, string? paymentMethod)
         {
             Status = TransactionStatus.Reversed;
             AddLog(EventType.CallbackReceived, description);
             TransactionReference = transactionReference;
+            PaymentMethod = paymentMethod;
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void MarkAsFailed(string? transactionReference, string? description)
+        public void MarkAsFailed(string? transactionReference, string? description, string? paymentMethod)
         {
             Status = TransactionStatus.Failed;
             AddLog(EventType.CallbackReceived, description);
             TransactionReference = transactionReference;
+            PaymentMethod = paymentMethod;
             UpdatedAt = DateTime.UtcNow;
         }
 

@@ -31,16 +31,16 @@ public class ProcessIpnCommandHandler : IRequestHandler<ProcessIpnCommand, bool>
         switch(statusDesc.ToUpper())
         {
             case "COMPLETED":
-                transaction.MarkAsCompleted(confirmationCode, description);
+                transaction.MarkAsCompleted(confirmationCode, description, paymentMethod);
                 break;
             case "FAILED":
-                transaction.MarkAsFailed(confirmationCode, description);
+                transaction.MarkAsFailed(confirmationCode, description, paymentMethod);
                 break;
             case "ÏNVALID":
-                transaction.MarkAsInvalid(confirmationCode, description);
+                transaction.MarkAsInvalid(confirmationCode, description, paymentMethod);
                 break;
             case "REVERSED":
-                transaction.MarkAsReversed(confirmationCode, description);
+                transaction.MarkAsReversed(confirmationCode, description, paymentMethod);
                 break;
             default:
                 return true; 
