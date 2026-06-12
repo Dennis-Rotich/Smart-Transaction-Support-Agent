@@ -21,7 +21,8 @@ public class ApplicationDbContext : DbContext
 		// Transaction Configuration
 		modelBuilder.Entity<Transaction>(entity => {
 			entity.HasKey(e => e.Id);
-			entity.Property(e => e.MerchantReference).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.MerchantReference).IsRequired().HasMaxLength(50);
 			entity.HasIndex(e => e.MerchantReference).IsUnique();
 			entity.Property(e => e.Amount).HasPrecision(18, 2);
 			entity.Property(e => e.Currency).IsRequired().HasMaxLength(3);
@@ -45,8 +46,8 @@ public class ApplicationDbContext : DbContext
 		modelBuilder.Entity<TransactionLog>(entity =>
 		{
 			entity.HasKey(e => e.Id);
-
-			entity.Property(e => e.Type)
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.Type)
 			 .HasConversion(v => v.ToString(), v => (EventType)Enum.Parse(typeof(EventType), v))
 			 .HasMaxLength(50);
 

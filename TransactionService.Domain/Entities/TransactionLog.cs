@@ -4,7 +4,7 @@ using TransactionService.Domain.Enums;
 namespace TransactionService.Domain.Entities
 {
     public class TransactionLog : BaseEntity
-    {
+    {   
         public Guid TransactionId { get; private set; }
         public EventType Type { get; private set; }
         public string? Message { get; private set; }

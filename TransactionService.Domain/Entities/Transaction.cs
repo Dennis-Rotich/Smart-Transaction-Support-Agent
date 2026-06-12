@@ -5,7 +5,7 @@ using TransactionService.Domain.Entities;
 namespace TransactionService.Domain.Entities
 {
     public class Transaction : BaseEntity
-    {
+    {   
         public string MerchantReference { get; private set; }
         public decimal Amount { get; private set; }
         public string Currency { get; private set; }
