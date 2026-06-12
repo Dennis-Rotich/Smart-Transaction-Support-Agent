@@ -15,6 +15,13 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
             .FirstOrDefaultAsync(t => t.MerchantReference == merchantReference);
     }
 
+    public async Task<Transaction?> GetByTransactionReferenceAsync(string transactionReference)
+    {
+        return await _context.Transactions
+            .Include(t => t.Logs)
+            .FirstOrDefaultAsync(t => t.TransactionReference == transactionReference);
+    }
+
     public async Task<IReadOnlyList<Transaction>> GetRecentTransactionsAsync(int count)
     {
         return await _context.Transactions

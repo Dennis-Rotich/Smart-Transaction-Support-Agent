@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using MediatR;
 using ModelContextProtocol.Server;
 using Microsoft.Extensions.Logging;
-using TransactionService.Application.Transactions.Queries;
+using TransactionService.Application.Documents.Queries;
 
 namespace TransactionService.Infrastructure.Tools;
 

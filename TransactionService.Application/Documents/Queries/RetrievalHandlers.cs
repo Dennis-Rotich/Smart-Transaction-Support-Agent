@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading;
 using TransactionService.Application.Interfaces;
-using TransactionService.Application.Transactions.DTOs;
+using TransactionService.Application.Documents.DTOs;
 
-namespace TransactionService.Application.Transactions.Queries;
+namespace TransactionService.Application.Documents.Queries;
 
 public class SearchLogsQueryHandler : IRequestHandler<SearchLogsQuery, IEnumerable<LogResultDto>>
 {

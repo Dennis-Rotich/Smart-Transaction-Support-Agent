@@ -6,16 +6,16 @@ using TransactionService.Application.Transactions.DTOs;
 
 namespace TransactionService.Application.Transactions.Queries;
 
-public class GetTransactionDetailsQueryHandler : IRequestHandler<GetTransactionDetailsQuery, TransactionDetailResponse?>
+public class GetTransactionDetailsByMerchantReferenceQueryHandler : IRequestHandler<GetTransactionDetailsByMerchantReferenceQuery, TransactionDetailResponse?>
 {
     private readonly ITransactionRepository _repository;
 
-    public GetTransactionDetailsQueryHandler(ITransactionRepository repository)
+    public GetTransactionDetailsByMerchantReferenceQueryHandler(ITransactionRepository repository)
     {
         _repository = repository;
     }
 
-    public async Task<TransactionDetailResponse?> Handle (GetTransactionDetailsQuery request, CancellationToken cancellationToken)
+    public async Task<TransactionDetailResponse?> Handle (GetTransactionDetailsByMerchantReferenceQuery request, CancellationToken cancellationToken)
     {
         var transaction = await _repository.GetByMerchantReferenceAsync(request.Reference);
 

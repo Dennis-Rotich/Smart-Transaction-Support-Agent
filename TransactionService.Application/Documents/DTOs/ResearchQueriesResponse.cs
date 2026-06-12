@@ -1,5 +1,5 @@
 
-namespace TransactionService.Application.Transactions.DTOs;
+namespace TransactionService.Application.Documents.DTOs;
 
 // Log search
 public record LogResultDto(DateTime Timestamp, string Level, string Message, string Source);

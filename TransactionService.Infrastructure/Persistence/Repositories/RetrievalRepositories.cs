@@ -65,7 +65,7 @@ public class DocumentRepository : IDocumentRepository
     public async Task<DocumentResultDto?> GetDocumentByIdAsync(string documentId)
     {
         if (!Guid.TryParse(documentId, out var id))
-        {   
+        {
             _logger.LogWarning("Invalid document ID format: {DocumentId}", documentId);
             return null;
         }
@@ -84,13 +84,13 @@ public class DocumentRepository : IDocumentRepository
                 fileContent = await File.ReadAllTextAsync(fullPath);
             }
             else
-            {   
+            {
                 _logger.LogError("File not found at path: {StoragePath}", fullPath);
                 fileContent = $"[System Error: File could not be found at path: {documentEntity.StoragePath}]";
             }
         }
         catch (Exception ex)
-        {   
+        {
             _logger.LogError(ex, "Error reading file for document ID: {DocumentId}", documentId);
             fileContent = $"[System Error: Failed to read file. {ex.Message}]";
         }
@@ -120,6 +120,68 @@ public class DocumentRepository : IDocumentRepository
         await _context.SaveChangesAsync();
 
         return new DocumentUploadResponse(document.FileName, document.StoragePath, document.DocumentType ?? "Unknown");
+    }
+
+    public async Task<IEnumerable<DocumentResultDto>> SearchDocumentAsync(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            return Enumerable.Empty<DocumentResultDto>();
+
+        var lowerQuery = query.ToLower();
+        var matchedDocuments = new List<DocumentResultDto>();
+
+        var allDocs = await _context.Documents
+        .Select(d => new { d.Id, d.FileName, d.StoragePath, d.DocumentType })
+        .ToListAsync();
+
+        foreach (var doc in allDocs)
+        {
+            double simulatedScore = 0;
+            string matchedContentPreview = String.Empty;
+
+            if (doc.FileName != null && doc.FileName.ToLower().Contains(lowerQuery))
+            {
+                simulatedScore = 0.9;
+            }
+            else if (!string.IsNullOrWhiteSpace(doc.StoragePath))
+            {
+                var fullPath = Path.Combine(Directory.GetCurrentDirectory(), doc.StoragePath);
+
+                if (File.Exists(fullPath))
+                {
+                    try
+                    {
+                        using var streamReader = new StreamReader(fullPath);
+                        string? line;
+
+                        while ((line = await streamReader.ReadLineAsync()) != null)
+                        {
+                            if (line.ToLower().Contains(lowerQuery))
+                            {
+                                simulatedScore = 0.5;
+                                matchedContentPreview = line.Length > 200 ? line.Substring(0, 200) + "..." : line;
+                                break;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error streaming file for document search: {StoragePath}", fullPath);
+                    }
+                }
+            }
+            if (simulatedScore > 0.0)
+            {
+                matchedDocuments.Add(new DocumentResultDto(
+                    doc.FileName ?? "No File Name",
+                    doc.DocumentType ?? "Unknown",
+                    matchedContentPreview
+                ));
+            }
+        }
+        return matchedDocuments
+        .OrderByDescending(d => 1)
+        .Take(5);
     }
 }
 

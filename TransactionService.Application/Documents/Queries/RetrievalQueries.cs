@@ -1,9 +1,9 @@
-using MediatR;
 using System;
 using System.Collections.Generic;
-using TransactionService.Application.Transactions.DTOs;
+using MediatR;
+using TransactionService.Application.Documents.DTOs;
 
-namespace TransactionService.Application.Transactions.Queries;
+namespace TransactionService.Application.Documents.Queries;
 
 public record SearchLogsQuery(string Query, string DateRange) : IRequest<IEnumerable<LogResultDto>>;
 

@@ -46,10 +46,10 @@ public class TransactionTools
     }
 
     [McpServerTool]
-    [Description("Retrieves the full, detailed information for a specific transaction using its reference ID.")]
-    public async Task<string> GetTransactionDetails([Description("The reference of the transaction e.g, TXN-A0078DD3")]string reference)
+    [Description("Retrieves the full, detailed information for a specific transaction using its merchant reference ")]
+    public async Task<string> GetTransactionDetailsByMerchantReference([Description("The merchant reference of the transaction e.g, TXN-A0078DD3")]string reference)
     {
-        var query = new GetTransactionDetailsQuery(reference);
+        var query = new GetTransactionDetailsByMerchantReferenceQuery(reference);
         var result = await _mediator.Send(query);
 
         if(result == null)
@@ -75,6 +75,88 @@ public class TransactionTools
             // We use LINQ and string.Join to create a clean text list for the LLM to read
             var formattedLogs = string.Join("\n", result.Logs.Select(log =>
                 $"  -> {log.Message} | Response Code: {log.ProviderResponseCode ?? "None"} | Response Body: {log.ProviderResponseBody ?? "None"}" 
+            ));
+            logsBlock += formattedLogs;
+        }
+        else
+        {
+            logsBlock += "  -> No historical logs found for this transaction.";
+        }
+
+        return detailsBlock + logsBlock;
+    }
+
+    [McpServerTool]
+    [Description("Retrieves the full, detailed information for a specific transaction using its transaction reference or confirmation code ")]
+    public async Task<string> GetTransactionDetailsByTransactionReference([Description("The transaction reference or confirmation code of the transaction e.g, 7812558239596369704604")] string reference)
+    {
+        var query = new GetTransactionDetailsByTransactionReferenceQuery(reference);
+        var result = await _mediator.Send(query);
+
+        if (result == null)
+        {
+            _logger.LogWarning("No transaction details found for reference '{Reference}'.", reference);
+            return $"Error: No transaction details found for reference '{reference}'.";
+        }
+
+        var detailsBlock = $@"Transaction Details for '{reference}':
+            - Merchant Reference: {result.MerchantReference}
+            - Transaction Reference: {result.TransactionReference}
+            - Payment Method: {result.PaymentMethod}
+            - Amount: {result.Amount}
+            - Currency: {result.Currency}
+            - Date Created: {result.CreatedAt:g}
+            - Current Status: {result.Status}
+            - Provider Tracking ID: {result.OrderTrackingId}";
+
+        var logsBlock = "\n\nTransaction History Logs:\n";
+
+        if (result.Logs != null && result.Logs.Any())
+        {
+            // We use LINQ and string.Join to create a clean text list for the LLM to read
+            var formattedLogs = string.Join("\n", result.Logs.Select(log =>
+                $"  -> {log.Message} | Response Code: {log.ProviderResponseCode ?? "None"} | Response Body: {log.ProviderResponseBody ?? "None"}"
+            ));
+            logsBlock += formattedLogs;
+        }
+        else
+        {
+            logsBlock += "  -> No historical logs found for this transaction.";
+        }
+
+        return detailsBlock + logsBlock;
+    }
+
+    [McpServerTool]
+    [Description("Retrieves the full, detailed information for a specific transaction using its order tracking id ")]
+    public async Task<string> GetTransactionDetailsByTrackingId([Description("The order tracking id of the transaction e.g, e7e44bac-04ef-408b-b3c1-da4c354faeed")] string trackingId)
+    {
+        var query = new GetTransactionDetailsByTrackingIdQuery(trackingId);
+        var result = await _mediator.Send(query);
+
+        if (result == null)
+        {
+            _logger.LogWarning("No transaction details found for tracking id '{TrackingId}'.", trackingId);
+            return $"Error: No transaction details found for trackingId '{trackingId}'.";
+        }
+
+        var detailsBlock = $@"Transaction Details for '{trackingId}':
+            - Merchant Reference: {result.MerchantReference}
+            - Transaction Reference: {result.TransactionReference}
+            - Payment Method: {result.PaymentMethod}
+            - Amount: {result.Amount}
+            - Currency: {result.Currency}
+            - Date Created: {result.CreatedAt:g}
+            - Current Status: {result.Status}
+            - Provider Tracking ID: {result.OrderTrackingId}";
+
+        var logsBlock = "\n\nTransaction History Logs:\n";
+
+        if (result.Logs != null && result.Logs.Any())
+        {
+            // We use LINQ and string.Join to create a clean text list for the LLM to read
+            var formattedLogs = string.Join("\n", result.Logs.Select(log =>
+                $"  -> {log.Message} | Response Code: {log.ProviderResponseCode ?? "None"} | Response Body: {log.ProviderResponseBody ?? "None"}"
             ));
             logsBlock += formattedLogs;
         }
