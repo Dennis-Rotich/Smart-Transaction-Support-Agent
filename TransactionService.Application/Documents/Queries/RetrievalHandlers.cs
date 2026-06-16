@@ -35,6 +35,19 @@ public class GetDocumentQueryHandler : IRequestHandler<GetDocumentQuery, Documen
     }
 }
 
+public class SearchDocumentQueryHandler : IRequestHandler<SearchDocumentQuery, IEnumerable<DocumentResultDto>>
+{
+    private readonly IDocumentRepository _repository;
+    public SearchDocumentQueryHandler(IDocumentRepository repository)
+    {
+        _repository = repository;
+    }
+    public async Task<IEnumerable<DocumentResultDto>> Handle(SearchDocumentQuery request, CancellationToken cancellationToken)
+    {
+        return await _repository.SearchDocumentAsync(request.Query);
+    }
+}
+
 public class SearchKnowledgeQueryHandler : IRequestHandler<SearchKnowledgeQuery, IEnumerable<KnowledgeResultDto>>
 {
     private readonly IKnowledgeBaseRepository _repository;

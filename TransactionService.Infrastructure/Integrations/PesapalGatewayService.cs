@@ -54,7 +54,7 @@ public class PesapalGatewayService : IPaymentGatewayService
         return jsonDoc.RootElement.GetProperty("ipn_id").GetString()!;
     }
 
-    public async Task<(string RedirectUrl, string OrderTrackingId)> SubmitOrderAsync(string token, decimal amount, string currency, string reference)
+    public async Task<(string RedirectUrl, string OrderTrackingId)> SubmitOrderAsync(string token, decimal amount, string currency, string reference, string email)
     {
         _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
@@ -68,11 +68,11 @@ public class PesapalGatewayService : IPaymentGatewayService
             notification_id = _configuration["Pesapal:IpnId"], 
             billing_address = new
             {
-                email_address = "customer@example.com", 
-                phone_number = "0110931140",
-                country_code = "KE",
-                first_name = "John",
-                last_name = "Doe"
+                email_address = email, 
+                phone_number = "",
+                country_code = "",
+                first_name = "",
+                last_name = ""
             }
         };
 

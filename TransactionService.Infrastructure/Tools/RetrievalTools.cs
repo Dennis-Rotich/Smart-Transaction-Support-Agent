@@ -73,4 +73,22 @@ public class RetrievalTools
 
         return $"Knowledge Base Results for '{query}':\n\n{formattedArticles}";
     }
+
+    [McpServerTool]
+    [Description("Retrieves the full text of specific uploaded fintech or system documentation using a specified query")]
+    public async Task<string> SearchDocument([Description("A free-text substring search term. It searches across the document's Title, Version, and Content. Pass an empty string if no text filtering is needed.")]string query)
+    {
+        var request = new SearchDocumentQuery(query);
+        var result = await _mediator.Send(request);
+
+        if (result == null)
+        {
+            _logger.LogWarning("Document with query '{query}' not found in repository.", query);
+            return $"Error: Document with Query '{query}' could not be found in the repository.";
+        }
+
+        var formattedDocs = string.Join("\n", result.Select(a => $"Title: {a.Title}\nExcerpt: {a.Version}\nContent: {a.Content}\n"));
+
+        return $"Document Results for '{query}':\n\n{formattedDocs}";
+    }
 }

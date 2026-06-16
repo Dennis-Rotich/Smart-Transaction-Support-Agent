@@ -4,6 +4,7 @@
 @rendermode InteractiveServer
 @inject McpClientService McpService
 @inject UploadDocumentService UploadService
+@inject PaymentService PaymentService
 
 <PageTitle>Smart Support Agent</PageTitle>
 
@@ -48,6 +49,32 @@
         }
     </div>
 
+    @if (ShowSecurePaymentForm)
+    {
+        <div class="secure-intake-card">
+            <h4>Secure Payment Generation</h4>
+            <p>Please provide an email for your receipt to open the secure payment portal.</p>
+            
+            <input type="email" @bind="userEmail" placeholder="Email Address" />
+            <input type="number" @bind="amount" placeholder="Amount" />
+            <input type="text" @bind="currency" placeholder="currency" />
+            <button @onclick="InitiatePesaPalOrder" disabled="@isProcessing">
+                Generate Payment Link
+            </button>
+        </div>
+    }
+
+    @if (ShowIframeModal)
+    {
+        <div class="modal-overlay">
+            <div class="modal-content">
+                <button class="close-btn" @onclick="() => ShowIframeModal = false">Close X</button>
+            
+                <iframe src="@IframePaymentUrl" width="100%" height="600px" frameborder="0"></iframe>
+            </div>
+        </div>
+    }
+
     @if(selectedFile != null)
     {
         <div class="file-staging-area">
@@ -91,6 +118,15 @@
     private List<ChatMessage> Messages = new();
     private string CurrentPrompt = string.Empty;
     private bool IsLoading = false;
+
+    private bool ShowSecurePaymentForm = false;
+    private string userEmail = string.Empty;
+    private decimal amount = 0;
+    private string currency = "KES";
+    private bool isProcessing = false;
+
+    private bool ShowIframeModal = false;
+    private string IframePaymentUrl = string.Empty;
 
     private IBrowserFile? selectedFile;
     private string FileError = string.Empty;
@@ -171,7 +207,14 @@
                 try
                 {
                     var response = await McpService.SendPromptAsync(userText);
-                    Messages.Add(new ChatMessage { Role = "Eldo", Content = response, Timestamp = DateTime.Now });
+                    Console.WriteLine(response);
+                    if(response.Contains("{\"ui_command\":\"RENDER_SECURE_PAYMENT_INTAKE\"}")){
+                        ShowSecurePaymentForm = true;
+                        StateHasChanged();
+                    }
+                    else{
+                        Messages.Add(new ChatMessage { Role = "Eldo", Content = response, Timestamp = DateTime.Now });
+                    }
                 }
                 catch (TaskCanceledException)
                 {
@@ -203,11 +246,43 @@
         }
     }
 
+    private async Task InitiatePesaPalOrder()
+    {
+        isProcessing = true;
+        
+        var result = await PaymentService.GeneratePaymentLinkAsync(userEmail, amount, currency);
+
+        if (result?.RedirectUrl != null)
+        {
+            OpenIframeModal(result.RedirectUrl);
+            
+            ShowSecurePaymentForm = false;
+            userEmail = string.Empty; 
+            isProcessing = false;
+            
+            Messages.Add(new ChatMessage {Role = "Eldo", Content = "Secure payment link generated and opened."});
+            StateHasChanged();
+        }
+        else
+        {
+            isProcessing = false;
+            Messages.Add(new ChatMessage{Role = "Eldo", Content = "Failed to generate the payment link. Please try again."});
+            StateHasChanged();
+        }
+    }
+
     private void HandleKeyUp(KeyboardEventArgs e)
     {
         if(e.Key == "Enter")
         {
             sendMessage();    
         }
+    }
+
+    private void OpenIframeModal(string url)
+    {
+        IframePaymentUrl = url;
+        ShowIframeModal = true;
+        StateHasChanged();
     }
 }

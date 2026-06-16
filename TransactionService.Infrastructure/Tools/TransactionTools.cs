@@ -20,15 +20,18 @@ public class TransactionTools
         _logger = logger;
     }
 
+    //[McpServerTool]
+    //[Description("Creates a new Pesapal payment order. Requires customer name, email, amount, and a unique reference. Returns the generated tracking ID and payment link.")]
+    //public async Task<string> CreatePaymentOrder([Description("The currency for the transaction in three capitalized words, e.g, KES")]string currency, [Description("The exact amount to be charged")]decimal amount)
+    //{
+    //    TriggerSecurePaymentIntake();
+    //}
+
     [McpServerTool]
-    [Description("Creates a new Pesapal payment order. Requires customer name, email, amount, and a unique reference. Returns the generated tracking ID and payment link.")]
-    public async Task<string> CreatePaymentOrder([Description("The currency for the transaction in three capitalized words, e.g, KES")]string currency, [Description("The exact amount to be charged")]decimal amount)
+    [Description("Call this tool when the user agrees to make a payment. CRITICAL INSTRUCTION: When this tool returns its result, you MUST output the EXACT raw JSON string as your final response. Do NOT add any conversational text, pleasantries, or markdown formatting before or after the JSON.")]
+    public async Task<string> TriggerSecurePaymentIntake()
     {
-        var command = new CreateTransactionCommand(amount, currency);
-
-        var result = await _mediator.Send(command);
-
-        return $"Payment Order Created Successfully.\nReference: {result.Reference}\nPayment URL: {result.PaymentUrl}";
+        return "{\"ui_command\": \"RENDER_SECURE_PAYMENT_INTAKE\"}";
     }
 
     [McpServerTool]

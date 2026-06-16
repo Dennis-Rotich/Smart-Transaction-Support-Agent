@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using TransactionService.Application.Interfaces;
+using TransactionService.Application.Transactions.Commands;
+using MediatR;
 
 namespace TransactionService.Api.Controllers;
 
@@ -9,10 +11,12 @@ namespace TransactionService.Api.Controllers;
 public class ChatController : ControllerBase
 {
     private readonly IAiOrchestratorService _orchestratorService;
+    private readonly IMediator _mediator; 
 
-    public ChatController(IAiOrchestratorService orchestratorService)
+    public ChatController(IAiOrchestratorService orchestratorService, IMediator mediator)
     {
         _orchestratorService = orchestratorService;
+        _mediator = mediator;
     }
 
     [HttpPost("test/prompt")]
@@ -30,6 +34,24 @@ public class ChatController : ControllerBase
             return Ok(new { response = aiResponse });
         }
         catch (System.Exception ex)
+        {
+            return StatusCode(500, new { error = "An error occurred while processing your request.", detail = ex.Message });
+        }
+    }
+
+    [HttpPost("generate-link")]
+    public async Task<IActionResult> GenerateLink([FromBody] GenerateLinkCommand command)
+    {
+        if(string.IsNullOrWhiteSpace(command.Email)) return BadRequest("Email is required");
+        if(string.IsNullOrWhiteSpace(command.Currency)) return BadRequest("Currency is required.");
+        if(command.Amount == 0) return BadRequest("Amount must be greater than zero.");
+
+        try
+        {
+            var response = await _mediator.Send(command);
+            return Ok(response);
+        }
+        catch (Exception ex)
         {
             return StatusCode(500, new { error = "An error occurred while processing your request.", detail = ex.Message });
         }

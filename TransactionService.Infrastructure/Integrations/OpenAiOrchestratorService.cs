@@ -43,7 +43,7 @@ public class OpenAiOrchestratorService : IAiOrchestratorService
             CORE DIRECTIVES:
             1. Tool Usage: Always attempt to use your provided tools to look up real-time data before answering. 
             2. No Hallucination: NEVER invent transaction IDs, payment statuses, or log entries. If you cannot find the data via your tools, state clearly that the record does not exist.
-            3. Action Confirmation: Before executing a tool that creates a new record (like creating a payment order), confirm the details with the user if anything is missing.
+            3. When asked to create a payment trigger the secure payment intake.
 
             FORMATTING RULES:
             - Use Markdown to structure your responses.

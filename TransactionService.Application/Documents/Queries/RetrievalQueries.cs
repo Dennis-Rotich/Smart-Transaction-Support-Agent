@@ -9,4 +9,6 @@ public record SearchLogsQuery(string Query, string DateRange) : IRequest<IEnumer
 
 public record GetDocumentQuery(string DocumentId) : IRequest<DocumentResultDto>;
 
+public record SearchDocumentQuery(string Query) : IRequest<IEnumerable<DocumentResultDto>>;
+
 public record SearchKnowledgeQuery(string Query) : IRequest<IEnumerable<KnowledgeResultDto>>;

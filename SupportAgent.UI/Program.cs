@@ -11,6 +11,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<McpClientService>();
 builder.Services.AddScoped<UploadDocumentService>();
+builder.Services.AddScoped<PaymentService>();
 
 var app = builder.Build();
 
