@@ -3,6 +3,7 @@ using TransactionService.Application.Transactions.Commands;
 using ModelContextProtocol.Server;
 using TransactionService.Infrastructure.Tools;
 using TransactionService.Application.Interfaces;
+using TransactionService.Application.Configurations;
 using TransactionService.Infrastructure.Persistence.Repositories;
 using Serilog;
 
@@ -45,6 +46,9 @@ builder.Services.AddMcpServer()
         options.Stateless = true;
     })
     .WithToolsFromAssembly(typeof(TransactionTools).Assembly);
+
+builder.Services.Configure<PineconeOptions>(
+    builder.Configuration.GetSection("Pinecone"));
 
 var app = builder.Build();
 
