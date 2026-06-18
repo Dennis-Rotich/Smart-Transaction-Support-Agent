@@ -106,16 +106,21 @@ public class DocumentRepository : IDocumentRepository
             Directory.CreateDirectory(uploadDir);
         }
 
+        var baseFileName = Path.GetFileNameWithoutExtension(fileName);
         var fileExt = Path.GetExtension(fileName);
-        var safeFileName = $"{Guid.NewGuid()}{fileExt}";
-        var physicalPath = Path.Combine(uploadDir, safeFileName);
 
-        using (var diskStream = new FileStream(physicalPath, FileMode.Create))
+        var timeStamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+
+        var safeFileName = $"{baseFileName}_{timeStamp}{fileExt}";
+        var absolutePath = Path.Combine(uploadDir, safeFileName);
+        var relativePath = Path.Combine("StoredDocuments", safeFileName);
+
+        using (var diskStream = new FileStream(absolutePath, FileMode.Create))
         {
             await fileStream.CopyToAsync(diskStream);
         }
 
-        var document = new Document(fileName, physicalPath, contentType);
+        var document = new Document(fileName, relativePath, contentType);
         _context.Documents.Add(document);
         await _context.SaveChangesAsync();
 
@@ -139,11 +144,13 @@ public class DocumentRepository : IDocumentRepository
             double simulatedScore = 0;
             string matchedContentPreview = String.Empty;
 
-            if (doc.FileName != null && doc.FileName.ToLower().Contains(lowerQuery))
+            bool titleMatched = doc.FileName != null && doc.FileName.ToLower().Contains(lowerQuery);
+            if (titleMatched)
             {
                 simulatedScore = 0.9;
             }
-            else if (!string.IsNullOrWhiteSpace(doc.StoragePath))
+
+            if (!string.IsNullOrWhiteSpace(doc.StoragePath))
             {
                 var fullPath = Path.Combine(Directory.GetCurrentDirectory(), doc.StoragePath);
 
@@ -155,10 +162,17 @@ public class DocumentRepository : IDocumentRepository
                         string? line;
 
                         while ((line = await streamReader.ReadLineAsync()) != null)
-                        {
+                        {   
+                            if(string.IsNullOrWhiteSpace(line)) continue;
+
+                            if (titleMatched && string.IsNullOrEmpty(matchedContentPreview))
+                            {
+                                matchedContentPreview = line.Length > 200 ? line.Substring(0, 200) + "..." : line;
+                            }
+
                             if (line.ToLower().Contains(lowerQuery))
                             {
-                                simulatedScore = 0.5;
+                                if(!titleMatched) simulatedScore = 0.5;
                                 matchedContentPreview = line.Length > 200 ? line.Substring(0, 200) + "..." : line;
                                 break;
                             }
@@ -175,7 +189,7 @@ public class DocumentRepository : IDocumentRepository
                 matchedDocuments.Add(new DocumentResultDto(
                     doc.FileName ?? "No File Name",
                     doc.DocumentType ?? "Unknown",
-                    matchedContentPreview
+                    string.IsNullOrWhiteSpace(matchedContentPreview) ? "No content available" : matchedContentPreview
                 ));
             }
         }

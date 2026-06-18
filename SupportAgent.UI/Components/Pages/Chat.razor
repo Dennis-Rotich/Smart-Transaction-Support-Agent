@@ -207,7 +207,6 @@
                 try
                 {
                     var response = await McpService.SendPromptAsync(userText);
-                    Console.WriteLine(response);
                     if(response.Contains("{\"ui_command\":\"RENDER_SECURE_PAYMENT_INTAKE\"}")){
                         ShowSecurePaymentForm = true;
                         StateHasChanged();
