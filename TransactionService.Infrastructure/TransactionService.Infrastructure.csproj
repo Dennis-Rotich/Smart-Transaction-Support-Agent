@@ -17,6 +17,7 @@
 	  <PackageReference Include="OpenAI" Version="2.10.0" />
 	  <PackageReference Include="Pinecone.NET" Version="3.0.0" />
 	  <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
+	  <PackageReference Include="UglyToad.PdfPig" Version="1.7.0-custom-5" />
   </ItemGroup>
 
   <PropertyGroup>

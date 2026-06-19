@@ -6,6 +6,7 @@ using TransactionService.Infrastructure.Persistence;
 using TransactionService.Infrastructure.Persistence.Repositories;
 using TransactionService.Application.Interfaces;
 using TransactionService.Infrastructure.Integrations;
+using TransactionService.Infrastructure.Tools;
 using Pinecone;
 using Microsoft.Extensions.Options;
 using TransactionService.Application.Configurations;
@@ -28,6 +29,12 @@ public static class DependencyInjection
         services.AddScoped<IDocumentRepository, DocumentRepository>();
         services.AddScoped<IKnowledgeBaseRepository, KnowledgeBaseRepository>();
         services.AddScoped<IAiOrchestratorService, OpenAiOrchestratorService>();
+
+        services.AddTransient<SystemTools>();
+        services.AddTransient<TransactionTools>();
+        services.AddTransient<RetrievalTools>();
+
+        services.AddTransient<IPdfExtractionService, PdfExtractionService>();
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 

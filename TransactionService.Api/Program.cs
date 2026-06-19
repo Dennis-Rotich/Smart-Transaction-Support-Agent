@@ -36,10 +36,6 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddMediatR(cfg =>
 cfg.RegisterServicesFromAssembly(typeof(CreateTransactionCommand).Assembly));
 
-builder.Services.AddTransient<SystemTools>();
-builder.Services.AddTransient<TransactionTools>();
-builder.Services.AddTransient<RetrievalTools>();
-
 builder.Services.AddMcpServer()
     .WithHttpTransport(options =>
     {
