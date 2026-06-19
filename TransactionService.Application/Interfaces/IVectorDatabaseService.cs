@@ -4,7 +4,7 @@ namespace TransactionService.Application.Interfaces;
 
 public interface IVectorDatabaseService
 {
-    Task UpsertVectorAsync(IEnumerable<VectorRecord> vectors, CancellationToken cancellationToken = default);
+    Task UpsertVectorAsync(IEnumerable<VectorRecord> records, CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<VectorSearchResult>> SearchAsync(float[] queryVector, int topK = 5, CancellationToken cancellation = default);
+    //Task<IEnumerable<VectorSearchResult>> SearchAsync(float[] queryVector, int topK = 5, CancellationToken cancellation = default);
 }

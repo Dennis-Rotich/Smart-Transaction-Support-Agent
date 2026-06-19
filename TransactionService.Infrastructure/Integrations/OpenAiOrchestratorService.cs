@@ -4,26 +4,32 @@ using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
+using OpenAI.Embeddings;
 using TransactionService.Application.Interfaces;
 using TransactionService.Infrastructure.Tools;
+using System.ClientModel;
 
 namespace TransactionService.Infrastructure.Integrations;
 
 public class OpenAiOrchestratorService : IAiOrchestratorService
 {
     private readonly ChatClient _chatClient;
+    private readonly global::OpenAI.OpenAIClient _openAIClient;
     private readonly ILogger<OpenAiOrchestratorService> _logger;
 
     private readonly TransactionTools _transactionTools;
     private readonly SystemTools _systemTools;
     private readonly RetrievalTools _retrievalTools;
 
-    public OpenAiOrchestratorService(IConfiguration configuration, TransactionTools transactionTools, SystemTools systemTools, RetrievalTools retrievalTools, ILogger<OpenAiOrchestratorService> logger)
+    private const string EmbeddingModel = "text-embedding-3-small";
+
+    public OpenAiOrchestratorService(OpenAI.OpenAIClient openAIClient,IConfiguration configuration, TransactionTools transactionTools, SystemTools systemTools, RetrievalTools retrievalTools, ILogger<OpenAiOrchestratorService> logger)
     {
         var apiKey = configuration["OpenAI:ApiKey"];
         var model = "gpt-4o-mini";
 
         _chatClient = new ChatClient(model, apiKey);
+        _openAIClient = openAIClient;
         _logger = logger;
 
         _transactionTools = transactionTools;
@@ -114,5 +120,28 @@ public class OpenAiOrchestratorService : IAiOrchestratorService
 
         return "The system exceeded maximum tool routing limits.";
 
+    }
+
+    public async Task<List<float[]>> GenerateEmbeddingsAsync(List<string> textChunks, CancellationToken cancellationToken = default)
+    {
+        var embeddings = new List<float[]>();
+
+        try
+        {
+            EmbeddingClient embeddingClient = _openAIClient.GetEmbeddingClient(EmbeddingModel);
+
+            var response = await embeddingClient.GenerateEmbeddingsAsync(textChunks, cancellationToken: cancellationToken);
+
+            foreach(var item in response.Value)
+            {
+                embeddings.Add(item.ToFloats().ToArray());
+            }
+
+            return embeddings;
+        }
+        catch (Exception ex)
+        {
+            throw new ApplicationException($"Failed to generate embeddings from OpenAI: {ex.Message}", ex);
+        }
     }
 }
