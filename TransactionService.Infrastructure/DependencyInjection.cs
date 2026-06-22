@@ -36,6 +36,7 @@ public static class DependencyInjection
 
         services.AddTransient<IPdfExtractionService, PdfExtractionService>();
         services.AddTransient<IQueryRewriterService, QueryRewriterService>();
+        services.AddTransient<IVectorSearchService, VectorSearchService>();
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
