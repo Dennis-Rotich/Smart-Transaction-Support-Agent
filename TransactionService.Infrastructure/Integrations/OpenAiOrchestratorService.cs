@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
 using OpenAI.Embeddings;
@@ -17,13 +18,11 @@ public class OpenAiOrchestratorService : IAiOrchestratorService
     private readonly global::OpenAI.OpenAIClient _openAIClient;
     private readonly ILogger<OpenAiOrchestratorService> _logger;
 
-    private readonly TransactionTools _transactionTools;
-    private readonly SystemTools _systemTools;
-    private readonly RetrievalTools _retrievalTools;
+    private readonly IServiceProvider _serviceProvider;
 
     private const string EmbeddingModel = "text-embedding-3-small";
 
-    public OpenAiOrchestratorService(OpenAI.OpenAIClient openAIClient,IConfiguration configuration, TransactionTools transactionTools, SystemTools systemTools, RetrievalTools retrievalTools, ILogger<OpenAiOrchestratorService> logger)
+    public OpenAiOrchestratorService(OpenAI.OpenAIClient openAIClient,IConfiguration configuration,IServiceProvider serviceProvider, ILogger<OpenAiOrchestratorService> logger)
     {
         var apiKey = configuration["OpenAI:ApiKey"];
         var model = "gpt-4o-mini";
@@ -32,9 +31,7 @@ public class OpenAiOrchestratorService : IAiOrchestratorService
         _openAIClient = openAIClient;
         _logger = logger;
 
-        _transactionTools = transactionTools;
-        _retrievalTools = retrievalTools;
-        _systemTools = systemTools;
+        _serviceProvider = serviceProvider;
     }
 
     public async Task<string> GetChatResponseAsync(string userPrompt)
@@ -64,8 +61,12 @@ public class OpenAiOrchestratorService : IAiOrchestratorService
             new UserChatMessage(userPrompt)
         };
 
+        var transactionTools = _serviceProvider.GetRequiredService<TransactionTools>();
+        var systemTools = _serviceProvider.GetRequiredService<SystemTools>();
+        var retrievalTools = _serviceProvider.GetRequiredService<RetrievalTools>();
+
         var options = new ChatCompletionOptions();
-        var toolClasses = new List<object> { _transactionTools, _systemTools, _retrievalTools };
+        var toolClasses = new List<object> { transactionTools, systemTools, retrievalTools };
         var allTools = ToolReflectionEngine.GenerateTools(toolClasses).ToList();
 
         _logger.LogInformation("Reflection Engine found {Count} total tools.", allTools.Count);

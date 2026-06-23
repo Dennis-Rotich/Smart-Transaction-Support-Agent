@@ -98,34 +98,34 @@ public class DocumentRepository : IDocumentRepository
         return new DocumentResultDto(documentEntity.FileName, documentEntity.DocumentType ?? "Unknown", fileContent);
     }
 
-    public async Task<DocumentUploadResponse> CreateDocumentAsync(string fileName, string contentType, Stream fileStream)
-    {
-        var uploadDir = Path.Combine(Directory.GetCurrentDirectory(), "StoredDocuments");
-        if (!Directory.Exists(uploadDir))
-        {
-            Directory.CreateDirectory(uploadDir);
-        }
+    //public async Task<DocumentUploadResponse> CreateDocumentAsync(string fileName, string contentType, Stream fileStream)
+    //{
+    //    var uploadDir = Path.Combine(Directory.GetCurrentDirectory(), "StoredDocuments");
+    //    if (!Directory.Exists(uploadDir))
+    //    {
+    //        Directory.CreateDirectory(uploadDir);
+    //    }
 
-        var baseFileName = Path.GetFileNameWithoutExtension(fileName);
-        var fileExt = Path.GetExtension(fileName);
+    //    var baseFileName = Path.GetFileNameWithoutExtension(fileName);
+    //    var fileExt = Path.GetExtension(fileName);
 
-        var timeStamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+    //    var timeStamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
 
-        var safeFileName = $"{baseFileName}_{timeStamp}{fileExt}";
-        var absolutePath = Path.Combine(uploadDir, safeFileName);
-        var relativePath = Path.Combine("StoredDocuments", safeFileName);
+    //    var safeFileName = $"{baseFileName}_{timeStamp}{fileExt}";
+    //    var absolutePath = Path.Combine(uploadDir, safeFileName);
+    //    var relativePath = Path.Combine("StoredDocuments", safeFileName);
 
-        using (var diskStream = new FileStream(absolutePath, FileMode.Create))
-        {
-            await fileStream.CopyToAsync(diskStream);
-        }
+    //    using (var diskStream = new FileStream(absolutePath, FileMode.Create))
+    //    {
+    //        await fileStream.CopyToAsync(diskStream);
+    //    }
 
-        var document = new Document(fileName, relativePath, contentType);
-        _context.Documents.Add(document);
-        await _context.SaveChangesAsync();
+    //    var document = new Document(fileName, relativePath, contentType);
+    //    _context.Documents.Add(document);
+    //    await _context.SaveChangesAsync();
 
-        return new DocumentUploadResponse(document.FileName, document.StoragePath, document.DocumentType ?? "Unknown");
-    }
+    //    return new DocumentUploadResponse(document.FileName, document.StoragePath, document.DocumentType ?? "Unknown");
+    //}
 
     public async Task<IEnumerable<DocumentResultDto>> SearchDocumentAsync(string query)
     {

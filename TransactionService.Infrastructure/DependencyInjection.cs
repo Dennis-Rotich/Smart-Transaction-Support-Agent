@@ -10,6 +10,7 @@ using TransactionService.Infrastructure.Tools;
 using Pinecone;
 using Microsoft.Extensions.Options;
 using TransactionService.Application.Configurations;
+using TransactionService.Application.Services;
 
 namespace TransactionService.Infrastructure;
 
@@ -29,6 +30,7 @@ public static class DependencyInjection
         services.AddScoped<IDocumentRepository, DocumentRepository>();
         services.AddScoped<IKnowledgeBaseRepository, KnowledgeBaseRepository>();
         services.AddScoped<IAiOrchestratorService, OpenAiOrchestratorService>();
+        services.AddScoped<DocumentProcessingService, DocumentProcessingService>();
 
         services.AddTransient<SystemTools>();
         services.AddTransient<TransactionTools>();
@@ -37,6 +39,7 @@ public static class DependencyInjection
         services.AddTransient<IPdfExtractionService, PdfExtractionService>();
         services.AddTransient<IQueryRewriterService, QueryRewriterService>();
         services.AddTransient<IVectorSearchService, VectorSearchService>();
+        services.AddTransient<IVectorDatabaseService, PineconeVectorService>();
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
@@ -54,6 +57,19 @@ public static class DependencyInjection
             var loggerFactory = sp.GetService<ILoggerFactory>();
 
             return new PineconeClient(options.ApiKey, loggerFactory);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var configuration = sp.GetRequiredService<IConfiguration>();
+            var apiKey = configuration["OpenAI:ApiKey"];
+
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                throw new InvalidOperationException("OpenAI Api Key is missing from configuration.");
+            }
+
+            return new global::OpenAI.OpenAIClient(apiKey);
         });
 
         return services;
