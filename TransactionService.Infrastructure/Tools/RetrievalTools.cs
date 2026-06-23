@@ -4,6 +4,7 @@ using MediatR;
 using ModelContextProtocol.Server;
 using Microsoft.Extensions.Logging;
 using TransactionService.Application.Documents.Queries;
+using TransactionService.Application.Interfaces;
 
 namespace TransactionService.Infrastructure.Tools;
 
@@ -12,11 +13,45 @@ public class RetrievalTools
 {
     private readonly IMediator _mediator;
     private readonly ILogger _logger;
+    private readonly IVectorSearchService _vectorSearchService; 
 
-    public RetrievalTools(IMediator mediator, ILogger<RetrievalTools> logger)
+    public RetrievalTools(IMediator mediator, ILogger<RetrievalTools> logger, IVectorSearchService vectorSearchService)
     {
         _mediator = mediator;
         _logger = logger;
+        _vectorSearchService = vectorSearchService;
+    }
+
+    [McpServerTool]
+    [Description()]
+    public async Task<string> SearchApiDocumentation([Description()]string rewrittenQuery)
+    {
+        if (string.IsNullOrWhiteSpace(rewrittenQuery))
+        {
+            _logger.LogWarning("SearchApiDocumentation called with an empty query.");
+            return "Error: The search query cannot be empty.";
+        }
+
+        _logger.LogInformation("Executing Vector DB Search for query: '{Query}'", rewrittenQuery);
+
+        try
+        {
+            string compiledExcerpts = await _vectorSearchService.SearchContextAsync(rewrittenQuery);
+
+            if (string.IsNullOrWhiteSpace(compiledExcerpts))
+            {
+                _logger.LogInformation("Vector DB returned 0 matches for query: '{Query}'", rewrittenQuery);
+                return $"No relevant API documentation sections were found matching '{rewrittenQuery}'.";
+            }
+
+            _logger.LogInformation("Vector DB query successful. Content length returned: {Len}", compiledExcerpts.Length);
+            return $"--- Relevant API Documentation Matches ---\n\n{compiledExcerpts}";
+
+        } catch(Exception ex)
+        {
+            _logger.LogError(ex,"Error occurred during vector database retrieval for query: '{Query}'", rewrittenQuery);
+            return $"Error: Failed to retrieve documentation due to a backend database issue: {ex.Message}";
+        }
     }
 
     [McpServerTool]
