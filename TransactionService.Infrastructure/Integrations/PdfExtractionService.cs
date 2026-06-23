@@ -22,7 +22,7 @@ public class PdfExtractionService : IPdfExtractionService
                 var topMargin = page.Height * 0.92;
 
                 var validWords = page.GetWords()
-                    .Where(w => w.BoundingBox.Bottom > bottomMargin && w.BoundingBox.Top > topMargin)
+                    .Where(w => w.BoundingBox.Bottom > bottomMargin && w.BoundingBox.Top < topMargin)
                     .OrderByDescending(w => w.BoundingBox.Top)
                     .ThenBy(w => w.BoundingBox.Left)
                     .Select(w => w.Text);

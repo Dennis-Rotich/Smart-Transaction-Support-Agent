@@ -125,6 +125,13 @@ public class OpenAiOrchestratorService : IAiOrchestratorService
 
     public async Task<List<float[]>> GenerateEmbeddingsAsync(List<string> textChunks, CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation("[DEBUG] GenerateEmbeddingsAsync called with {Count} chunks.", textChunks?.Count ?? 0);
+
+        if (textChunks != null && textChunks.Any())
+        {
+            _logger.LogInformation("[DEBUG] Chunk 0 length: {Len}, content: '{Content}'", textChunks[0].Length, textChunks[0]);
+        }
+
         var embeddings = new List<float[]>();
 
         try
@@ -133,15 +140,21 @@ public class OpenAiOrchestratorService : IAiOrchestratorService
 
             var response = await embeddingClient.GenerateEmbeddingsAsync(textChunks, cancellationToken: cancellationToken);
 
-            foreach(var item in response.Value)
+            var responseCount = response.Value?.Count() ?? 0;
+            _logger.LogInformation("[DEBUG] OpenAI API returned {Count} embedding values.", responseCount);
+
+            foreach (var item in response.Value)
             {
                 embeddings.Add(item.ToFloats().ToArray());
             }
+
+            _logger.LogInformation("[DEBUG] Returning {Count} mapped vectors back to caller.", embeddings.Count);
 
             return embeddings;
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "[DEBUG] Exception thrown inside GenerateEmbeddingsAsync");
             throw new ApplicationException($"Failed to generate embeddings from OpenAI: {ex.Message}", ex);
         }
     }

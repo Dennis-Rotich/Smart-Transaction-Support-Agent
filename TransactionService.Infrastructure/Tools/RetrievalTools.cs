@@ -23,8 +23,8 @@ public class RetrievalTools
     }
 
     [McpServerTool]
-    [Description()]
-    public async Task<string> SearchApiDocumentation([Description()]string rewrittenQuery)
+    [Description("Searches the core API documentation vector database for specialized technical details, integration rules, setup steps, or architecture specifications.")]
+    public async Task<string> SearchApiDocumentation([Description("The explicit, context-free standalone query optimized for semantic database retrieval.")]string rewrittenQuery)
     {
         if (string.IsNullOrWhiteSpace(rewrittenQuery))
         {
