@@ -28,8 +28,11 @@ public class ChatController : ControllerBase
         }
 
         try
-        {
-            string aiResponse = await _orchestratorService.GetChatResponseAsync(request.Prompt);
+        {   
+            var recentHistory = request.History != null ? request.History.TakeLast(5).ToList() 
+                : new List<ChatMessageDto>();
+
+            string aiResponse = await _orchestratorService.GetChatResponseAsync(request.Prompt, recentHistory);
 
             return Ok(new { response = aiResponse });
         }
@@ -61,4 +64,5 @@ public class ChatController : ControllerBase
 public class ChatRequest
 {
     public string Prompt { get; set; } = string.Empty;
+    public List<ChatMessageDto> History { get; set; } = new();
 }

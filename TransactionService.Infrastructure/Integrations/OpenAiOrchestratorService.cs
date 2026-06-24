@@ -34,7 +34,7 @@ public class OpenAiOrchestratorService : IAiOrchestratorService
         _serviceProvider = serviceProvider;
     }
 
-    public async Task<string> GetChatResponseAsync(string userPrompt)
+    public async Task<string> GetChatResponseAsync(string userPrompt, List<ChatMessageDto> history)
     {
         _logger.LogInformation("------NEW CHAT REQUEST------");
         _logger.LogInformation("User Prompt: {Prompt}", userPrompt);
@@ -58,8 +58,24 @@ public class OpenAiOrchestratorService : IAiOrchestratorService
         var messages = new List<ChatMessage>
         {
             new SystemChatMessage(systemInstruction),
-            new UserChatMessage(userPrompt)
         };
+
+        if(history != null && history.Any())
+        {
+            foreach(var msg in history)
+            {
+                if(msg.Role.Equals("User", StringComparison.OrdinalIgnoreCase))
+                {
+                    messages.Add(new UserChatMessage(msg.Content));
+                }
+                else
+                {
+                    messages.Add(new SystemChatMessage(msg.Content));
+                }
+            }
+        }
+
+        messages.Add(new UserChatMessage(userPrompt));
 
         var transactionTools = _serviceProvider.GetRequiredService<TransactionTools>();
         var systemTools = _serviceProvider.GetRequiredService<SystemTools>();
@@ -143,9 +159,12 @@ public class OpenAiOrchestratorService : IAiOrchestratorService
             var responseCount = response.Value?.Count() ?? 0;
             _logger.LogInformation("[DEBUG] OpenAI API returned {Count} embedding values.", responseCount);
 
-            foreach (var item in response.Value)
+            if(response.Value != null)
             {
-                embeddings.Add(item.ToFloats().ToArray());
+                foreach (var item in response.Value)
+                {
+                    embeddings.Add(item.ToFloats().ToArray());
+                }
             }
 
             _logger.LogInformation("[DEBUG] Returning {Count} mapped vectors back to caller.", embeddings.Count);

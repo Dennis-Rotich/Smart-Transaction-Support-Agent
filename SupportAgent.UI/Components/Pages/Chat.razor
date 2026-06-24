@@ -196,8 +196,11 @@
             }
 
             if(!string.IsNullOrWhiteSpace(CurrentPrompt)){
-                Messages.Add(new ChatMessage { Role = "User", Content = CurrentPrompt });
                 var userText = CurrentPrompt;
+
+                var historyToTransmit = Messages.ToList();
+
+                Messages.Add(new ChatMessage { Role = "User", Content = CurrentPrompt });
                 CurrentPrompt = string.Empty;
 
                 _isTyping = true;
@@ -206,7 +209,7 @@
 
                 try
                 {
-                    var response = await McpService.SendPromptAsync(userText);
+                    var response = await McpService.SendPromptAsync(userText, historyToTransmit);
                     if(response.Contains("{\"ui_command\":\"RENDER_SECURE_PAYMENT_INTAKE\"}")){
                         ShowSecurePaymentForm = true;
                         StateHasChanged();

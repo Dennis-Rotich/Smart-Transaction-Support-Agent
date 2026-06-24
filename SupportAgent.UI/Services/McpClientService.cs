@@ -18,13 +18,19 @@ public class McpClientService
         _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
     }
 
-    public async Task<string> SendPromptAsync(string userInput)
+    public async Task<string> SendPromptAsync(string userInput, List<SupportAgent.UI.Models.ChatMessage> chatHistory)
     {
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(45));
 
-            var payload = new { prompt = userInput };
+            var formattedHistory = chatHistory.Select(h => new
+            {
+                role = h.Role,
+                content = h.Content
+            }).ToList();
+
+            var payload = new { prompt = userInput, history = formattedHistory };
             var jsonString = JsonSerializer.Serialize(payload);
 
             var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
