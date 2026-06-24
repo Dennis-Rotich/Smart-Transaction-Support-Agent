@@ -9,12 +9,14 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+string logDirectory = Path.Combine(AppContext.BaseDirectory, "logs", "eldo-agent-.txt");
+
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
-    //.MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
     .Enrich.FromLogContext()
     .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}")
-    .WriteTo.File("logs/eldo-agent-.txt", rollingInterval: RollingInterval.Day) 
+    .WriteTo.File(logDirectory, rollingInterval: RollingInterval.Day) 
     .CreateLogger();
 
 builder.Host.UseSerilog();
