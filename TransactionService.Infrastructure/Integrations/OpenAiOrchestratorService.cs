@@ -75,12 +75,12 @@ public class OpenAiOrchestratorService : IAiOrchestratorService
 
         messages.Add(new UserChatMessage(userPrompt));
 
-        var transactionTools = _serviceProvider.GetRequiredService<TransactionTools>();
-        var systemTools = _serviceProvider.GetRequiredService<SystemTools>();
+        //var transactionTools = _serviceProvider.GetRequiredService<TransactionTools>();
+        //var systemTools = _serviceProvider.GetRequiredService<SystemTools>();
         var retrievalTools = _serviceProvider.GetRequiredService<RetrievalTools>();
 
         var options = new ChatCompletionOptions();
-        var toolClasses = new List<object> { transactionTools, systemTools, retrievalTools };
+        var toolClasses = new List<object> { retrievalTools };
         var allTools = ToolReflectionEngine.GenerateTools(toolClasses).ToList();
 
         _logger.LogInformation("Reflection Engine found {Count} total tools.", allTools.Count);

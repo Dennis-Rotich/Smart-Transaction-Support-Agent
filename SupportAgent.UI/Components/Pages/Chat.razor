@@ -7,18 +7,19 @@
 @inject UploadDocumentService UploadService
 @inject PaymentService PaymentService
 @inject IJSRuntime JSRuntime
+@inject IConfiguration Configuration
 
 <PageTitle>Smart Support Agent</PageTitle>
 
 <div class="chat-container">
     <div class="chat-header">
-        <h2>Pesapal Smart Support</h2>
+        <h2><span class="pesa">Pesa</span><span class="pal">pal</span></h2>
     </div>
 
     <div class="message-history">
         @if (!Messages.Any())
         {
-            <div class="empty-state">How can I help you with your transactions today?</div>
+            <div class="empty-state">How can I help you with your integrations today?</div>
         }
         else
         {
@@ -34,16 +35,16 @@
         }
         @if(_isTyping)
         {
-            <div class="message-row eldo">
+            <div class="message-row bot">
                 <div class="message-bubble" style="opacity:0.8;">
-                    <div class="message-content">Eldo is analyzing...</div>
+                    <div class="message-content">@(botName) is analyzing...</div>
                     <span class="" role="status" aria-hidden="true"></span>
                 </div>
             </div>
         }
         @if(!string.IsNullOrEmpty(_errorMessage))
         {
-            <div class="message-row eldo">
+            <div class="message-row bot">
                 <div class="message-bubble error">
                     <div class="message-content">@_errorMessage</div>
                 </div>
@@ -93,27 +94,47 @@
     }   
 
     <div class="chat-input-area">
-        <div class="upload-wrapper">
-            <label for="fileInput" class="upload-btn @(IsLoading ? "disabled": "")" >        
-                📎
-            </label>
-            <InputFile id="fileInput"
-                OnChange="HandleFileSelected"
-                style="display:none"
-                disabed="@IsLoading"
-                accept=".txt,.md,.pdf,.csv,.log"/>
-        </div>
-        <input type="text"
-            class="prompt-input"
-               placeholder="Ask a question or upload a document..."            
-               @bind="CurrentPrompt"
-               @bind:event="oninput"
-               @onkeyup="HandleKeyUp"
-               disabled="@IsLoading"/>
-        <button class="send-btn" @onclick="sendMessage" disabled="@(string.IsNullOrWhiteSpace(CurrentPrompt) && selectedFile == null || IsLoading)">
-            @(IsLoading ? "..." : "Send")
-        </button>
-    </div>
+    @if (fileUpload)
+        {
+            <div class="upload-wrapper">
+                <label for="fileInput" class="upload-btn @(IsLoading ? "disabled": "")">        
+                    📎
+                </label>
+                <InputFile id="fileInput"
+                    OnChange="HandleFileSelected"
+                    style="display:none"
+                    disabled="@IsLoading"
+                    accept=".txt,.md,.pdf,.csv,.log"/>
+            </div>
+
+            <input type="text"
+                class="prompt-input"
+                placeholder="Ask a question or upload a document..."            
+                @bind="CurrentPrompt"
+                @bind:event="oninput"
+                @onkeyup="HandleKeyUp"
+                disabled="@IsLoading"/>
+
+            <button class="send-btn" @onclick="sendMessage" disabled="@((string.IsNullOrWhiteSpace(CurrentPrompt) && selectedFile == null) || IsLoading)">
+                @(IsLoading ? "..." : "Send")
+            </button>
+        }
+      else
+        {
+            <input type="text"
+                class="prompt-input"
+                placeholder="Ask a question..."            
+                @bind="CurrentPrompt"
+                @bind:event="oninput"
+                @onkeyup="HandleKeyUp"
+                disabled="@IsLoading"/>
+
+            <button class="send-btn" @onclick="sendMessage" disabled="@(string.IsNullOrWhiteSpace(CurrentPrompt) || IsLoading)">
+                @(IsLoading ? "..." : "Send")
+            </button>
+        }
+</div>
+    
 </div>
 
 @code{
@@ -138,6 +159,22 @@
 
     private bool _isTyping = false;
     private string _errorMessage = string.Empty;
+
+    private bool fileUpload = false;
+    private string botName = "Test Bot";
+
+    protected override void OnInitialized()
+    {
+        botName = Configuration["ChatSettings:BotName"] ?? "Test Bot";
+
+        // 2. Read the boolean for file uploads
+        if (bool.TryParse(Configuration["ChatSettings:EnableFileUpload"], out bool enableUploadConfig))
+        {
+            fileUpload = enableUploadConfig;
+        }
+        
+        base.OnInitialized();
+    }
 
     private void HandleFileSelected(InputFileChangeEventArgs e)
     {
@@ -188,9 +225,9 @@
                 var uploadResult = await UploadService.UploadDocumentAsync(selectedFile);
 
                 if(uploadResult != null){
-                    Messages.Add(new ChatMessage { Role = "Eldo", Content = "File successfully stored." });
+                    Messages.Add(new ChatMessage { Role = "bot", Content = "File successfully stored." });
                 } else{
-                    Messages.Add(new ChatMessage { Role = "Eldo", Content = "File upload failed." });
+                    Messages.Add(new ChatMessage { Role = "bot", Content = "File upload failed." });
                 }
 
                 selectedFile = null;
@@ -216,7 +253,7 @@
                     //     ShowSecurePaymentForm = true;
                     //     StateHasChanged();
                     // }
-                    Messages.Add(new ChatMessage { Role = "Eldo", Content = response, Timestamp = DateTime.Now });
+                    Messages.Add(new ChatMessage { Role = "bot", Content = response, Timestamp = DateTime.Now });
                 }
                 catch (TaskCanceledException)
                 {
@@ -236,7 +273,7 @@
         {
             Messages.Add(new ChatMessage
             {
-                Role = "Eldo",
+                Role = "bot",
                 Content = $"Error: {ex.Message}",
                 Timestamp = DateTime.Now
             });

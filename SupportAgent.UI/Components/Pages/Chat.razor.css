@@ -10,11 +10,23 @@
 
 .chat-header {
     padding: 1rem;
-    background-color: #0f172a;
-    color: white;
+    background-color: #E2E8F0;
+    color: #1E293B;
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
     text-align: center;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 1.8rem;
+    letter-spacing: -0.5px
+}
+
+.pesa {
+    color: #2A72A7;
+}
+
+.pal {
+    color: #AD2B2A;
 }
 
 .message-history {
@@ -42,7 +54,7 @@
    justify-content: flex-start;
 }
 
-.message-row.eldo{
+.message-row.bot{
     justify-content: flex-end;
 }
 
@@ -59,7 +71,7 @@
     border-bottom-right-radius: 4px;
 }
 
-.eldo .message-bubble {
+.bot .message-bubble {
     background-color: #e2e8f0;
     color: #1e293b;
     border-bottom-left-radius: 4px;
