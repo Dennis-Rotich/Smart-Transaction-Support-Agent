@@ -40,7 +40,7 @@ public class OpenAiOrchestratorService : IAiOrchestratorService
         _logger.LogInformation("User Prompt: {Prompt}", userPrompt);
 
         var systemInstruction = """
-            You are an expert API Integration Assistant. 
+            You are an expert Pesapal API Integration Assistant. 
             Your SOLE purpose is to help developers integrate our APIs by referencing official documentation.
 
             CORE DIRECTIVES:

@@ -7,7 +7,7 @@ using TransactionService.Infrastructure.Persistence.Repositories;
 using TransactionService.Application.Interfaces;
 using TransactionService.Infrastructure.Integrations;
 using TransactionService.Infrastructure.Tools;
-using Pinecone;
+//using Pinecone;
 using Microsoft.Extensions.Options;
 using TransactionService.Application.Configurations;
 using TransactionService.Application.Services;
@@ -39,25 +39,25 @@ public static class DependencyInjection
         services.AddTransient<IPdfExtractionService, PdfExtractionService>();
         services.AddTransient<IQueryRewriterService, QueryRewriterService>();
         services.AddTransient<IVectorSearchService, VectorSearchService>();
-        services.AddTransient<IVectorDatabaseService, PineconeVectorService>();
+        services.AddTransient<IVectorDatabaseService, QdrantVectorService>();
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.AddHttpClient<IPaymentGatewayService, PesapalGatewayService>();
 
-        services.AddSingleton(sp =>
-        {
-            var options = sp.GetRequiredService<IOptions<PineconeOptions>>().Value;
+        //services.AddSingleton(sp =>
+        //{
+        //    var options = sp.GetRequiredService<IOptions<PineconeOptions>>().Value;
 
-            if (string.IsNullOrWhiteSpace(options.ApiKey))
-            {
-                throw new InvalidOperationException("Pinecone Api Key is missing");
-            }
+        //    if (string.IsNullOrWhiteSpace(options.ApiKey))
+        //    {
+        //        throw new InvalidOperationException("Pinecone Api Key is missing");
+        //    }
 
-            var loggerFactory = sp.GetService<ILoggerFactory>();
+        //    var loggerFactory = sp.GetService<ILoggerFactory>();
 
-            return new PineconeClient(options.ApiKey, loggerFactory);
-        });
+        //    return new PineconeClient(options.ApiKey, loggerFactory);
+        //});
 
         services.AddSingleton(sp =>
         {

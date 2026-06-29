@@ -13,7 +13,7 @@
 
 <div class="chat-container">
     <div class="chat-header">
-        <h2><span class="pesa">Pesa</span><span class="pal">pal</span></h2>
+        <h2><span class="pesa">pesa</span><span class="pal">pal</span></h2>
     </div>
 
     <div class="message-history">
@@ -155,7 +155,7 @@
     private string FileError = string.Empty;
 
     private const long MaxFileSize = 5 * 1024 * 1024;
-    private readonly string[] AllowedExtensions = new[] { ".txt", ".md", ".pdf", ".csv", ".log" };
+    private readonly string[] AllowedExtensions = new[] { ".pdf" };
 
     private bool _isTyping = false;
     private string _errorMessage = string.Empty;
@@ -167,7 +167,6 @@
     {
         botName = Configuration["ChatSettings:BotName"] ?? "Test Bot";
 
-        // 2. Read the boolean for file uploads
         if (bool.TryParse(Configuration["ChatSettings:EnableFileUpload"], out bool enableUploadConfig))
         {
             fileUpload = enableUploadConfig;
@@ -196,7 +195,7 @@
         var extension = Path.GetExtension(file.Name).ToLower();
         if (!AllowedExtensions.Contains(extension))
         {
-            FileError = $"{extension} files are not supported. Please upload TXT, MD, PDF, CSV, or LOG.";
+            FileError = $"{extension} files are not supported. Please upload PDF";
             return;
         }
         selectedFile = file;
