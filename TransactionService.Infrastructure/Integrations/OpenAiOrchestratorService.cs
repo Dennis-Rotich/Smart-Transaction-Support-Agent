@@ -105,7 +105,7 @@ public class OpenAiOrchestratorService : IAiOrchestratorService
 
             if (completion.Value.FinishReason == ChatFinishReason.ToolCalls)
             {
-                _logger.LogWarning("AI requested tool: {Count} tool calls found.", completion.Value.ToolCalls.Count);
+                _logger.LogInformation("AI requested tool: {Count} tool calls found.", completion.Value.ToolCalls.Count);
 
                 foreach (var toolCall in completion.Value.ToolCalls)
                 {
