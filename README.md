@@ -121,7 +121,7 @@ Validate that "EnableFileUpload": true is set within the UI configuration.
 
 Access the deployed Blazor interface via a web browser.
 
-Click the attachment icon (📎) and upload the target technical documentation (PDFs, TXT, MD).
+Click the attachment icon (📎) and upload the target technical documentation (PDFs).
 
 The underlying API service will automatically intercept the upload, extract and chunk the text, execute remote OpenAI vector embedding generation, and map the records to Qdrant payloads via a gRPC batch-upsert.
 
