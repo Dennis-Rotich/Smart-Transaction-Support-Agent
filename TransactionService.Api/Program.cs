@@ -47,8 +47,8 @@ builder.Services.AddMcpServer()
     })
     .WithToolsFromAssembly(typeof(TransactionTools).Assembly);
 
-builder.Services.Configure<PineconeOptions>(
-    builder.Configuration.GetSection("Pinecone"));
+//builder.Services.Configure<PineconeOptions>(
+//    builder.Configuration.GetSection("Pinecone"));
 
 var app = builder.Build();
 
