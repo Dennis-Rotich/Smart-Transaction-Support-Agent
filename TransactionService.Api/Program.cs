@@ -11,7 +11,7 @@ using Qdrant.Client.Grpc;
 
 var builder = WebApplication.CreateBuilder(args);
 
-string logDirectory = Path.Combine(AppContext.BaseDirectory, "logs", "eldo-agent-.txt");
+string logDirectory = Path.Combine(AppContext.BaseDirectory, "logs", "support-agent-.txt");
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
