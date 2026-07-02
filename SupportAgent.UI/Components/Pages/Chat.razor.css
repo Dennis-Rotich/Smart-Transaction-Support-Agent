@@ -10,11 +10,23 @@
 
 .chat-header {
     padding: 1rem;
-    background-color: #0f172a;
-    color: white;
+    background-color: #E2E8F0;
+    color: #1E293B;
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
     text-align: center;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 1.8rem;
+    letter-spacing: -0.5px
+}
+
+.pesa {
+    color: #2A72A7;
+}
+
+.pal {
+    color: #AD2B2A;
 }
 
 .message-history {
@@ -42,7 +54,7 @@
    justify-content: flex-start;
 }
 
-.message-row.eldo{
+.message-row.bot{
     justify-content: flex-end;
 }
 
@@ -59,7 +71,7 @@
     border-bottom-right-radius: 4px;
 }
 
-.eldo .message-bubble {
+.bot .message-bubble {
     background-color: #e2e8f0;
     color: #1e293b;
     border-bottom-left-radius: 4px;
@@ -223,4 +235,44 @@
     padding: 5px 10px;
     cursor: pointer;
     margin-bottom: 10px;
+}
+
+.ai-code-wrapper{
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    margin: 12px 0;
+    overflow: hidden;
+    font-family: "Consolas", "Courier New", monospace;
+}
+
+.ai-code-header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #2d2d2d;
+    padding: 6px 12px;
+    color: #b3b3b3;
+    font-size: 0.85rem;
+    border-bottom: 1px solid #404040;
+}
+
+.ai-copy-btn{
+    background: none;
+    border: none;
+    color: #b3b3b3;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: color 0.2s ease;
+}
+
+.ai-copy-btn:hover{
+    color: #ffffff; 
+}
+
+.ai-code-wrapper pre{
+    margin: 0;
+    padding: 12px;
+    overflow-x: auto;
+    color: #d4d4d4;
+    font-size: 0.9rem;
 }

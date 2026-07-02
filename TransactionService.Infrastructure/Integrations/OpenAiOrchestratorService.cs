@@ -2,64 +2,85 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
+using OpenAI.Embeddings;
 using TransactionService.Application.Interfaces;
 using TransactionService.Infrastructure.Tools;
+using System.ClientModel;
 
 namespace TransactionService.Infrastructure.Integrations;
 
 public class OpenAiOrchestratorService : IAiOrchestratorService
 {
     private readonly ChatClient _chatClient;
+    private readonly global::OpenAI.OpenAIClient _openAIClient;
     private readonly ILogger<OpenAiOrchestratorService> _logger;
 
-    private readonly TransactionTools _transactionTools;
-    private readonly SystemTools _systemTools;
-    private readonly RetrievalTools _retrievalTools;
+    private readonly IServiceProvider _serviceProvider;
 
-    public OpenAiOrchestratorService(IConfiguration configuration, TransactionTools transactionTools, SystemTools systemTools, RetrievalTools retrievalTools, ILogger<OpenAiOrchestratorService> logger)
+    private const string EmbeddingModel = "text-embedding-3-small";
+
+    public OpenAiOrchestratorService(OpenAI.OpenAIClient openAIClient,IConfiguration configuration,IServiceProvider serviceProvider, ILogger<OpenAiOrchestratorService> logger)
     {
         var apiKey = configuration["OpenAI:ApiKey"];
         var model = "gpt-4o-mini";
 
         _chatClient = new ChatClient(model, apiKey);
+        _openAIClient = openAIClient;
         _logger = logger;
 
-        _transactionTools = transactionTools;
-        _retrievalTools = retrievalTools;
-        _systemTools = systemTools;
+        _serviceProvider = serviceProvider;
     }
 
-    public async Task<string> GetChatResponseAsync(string userPrompt)
+    public async Task<string> GetChatResponseAsync(string userPrompt, List<ChatMessageDto> history)
     {
         _logger.LogInformation("------NEW CHAT REQUEST------");
         _logger.LogInformation("User Prompt: {Prompt}", userPrompt);
 
         var systemInstruction = """
-            You are 'Eldo', an expert IT support and transaction analysis agent.
-            Your primary role is to assist users with payment processing, log analysis, and system documentation.
+            You are an expert Pesapal API Integration Assistant. 
+            Your SOLE purpose is to help developers integrate our APIs by referencing official documentation.
 
             CORE DIRECTIVES:
-            1. Tool Usage: Always attempt to use your provided tools to look up real-time data before answering. 
-            2. No Hallucination: NEVER invent transaction IDs, payment statuses, or log entries. If you cannot find the data via your tools, state clearly that the record does not exist.
-            3. When asked to create a payment trigger the secure payment intake.
-
+            1. Search First: You must ALWAYS use the SearchApiDocumentation tool to find answers to any user query.
+            2. Strict Adherence: Base your technical advice STRICTLY on the text returned by the tool. 
+            3. Anti-Hallucination: If the SearchApiDocumentation tool returns no results, or if the retrieved text does not contain the answer, you must admit that it's not in the documentation. NEVER guess, assume, or rely on your pre-training data.
+            
             FORMATTING RULES:
-            - Use Markdown to structure your responses.
-            - Present lists of transactions or logs in clean Markdown tables.
-            - Highlight critical data like `Transaction IDs` or `Reference Codes` in inline code blocks.
-            - Keep your tone concise, professional, and strictly focused on technical and transactional support.
+            - Structure your answers using clean Markdown.
+            - Format code snippets, endpoints, and JSON payloads within Markdown code blocks.
             """;
 
         var messages = new List<ChatMessage>
         {
             new SystemChatMessage(systemInstruction),
-            new UserChatMessage(userPrompt)
         };
 
+        if(history != null && history.Any())
+        {
+            foreach(var msg in history)
+            {
+                if(msg.Role.Equals("User", StringComparison.OrdinalIgnoreCase))
+                {
+                    messages.Add(new UserChatMessage(msg.Content));
+                }
+                else
+                {
+                    messages.Add(new SystemChatMessage(msg.Content));
+                }
+            }
+        }
+
+        messages.Add(new UserChatMessage(userPrompt));
+
+        //var transactionTools = _serviceProvider.GetRequiredService<TransactionTools>();
+        //var systemTools = _serviceProvider.GetRequiredService<SystemTools>();
+        var retrievalTools = _serviceProvider.GetRequiredService<RetrievalTools>();
+
         var options = new ChatCompletionOptions();
-        var toolClasses = new List<object> { _transactionTools, _systemTools, _retrievalTools };
+        var toolClasses = new List<object> { retrievalTools };
         var allTools = ToolReflectionEngine.GenerateTools(toolClasses).ToList();
 
         _logger.LogInformation("Reflection Engine found {Count} total tools.", allTools.Count);
@@ -114,5 +135,44 @@ public class OpenAiOrchestratorService : IAiOrchestratorService
 
         return "The system exceeded maximum tool routing limits.";
 
+    }
+
+    public async Task<List<float[]>> GenerateEmbeddingsAsync(List<string> textChunks, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("[DEBUG] GenerateEmbeddingsAsync called with {Count} chunks.", textChunks?.Count ?? 0);
+
+        if (textChunks != null && textChunks.Any())
+        {
+            _logger.LogInformation("[DEBUG] Chunk 0 length: {Len}, content: '{Content}'", textChunks[0].Length, textChunks[0]);
+        }
+
+        var embeddings = new List<float[]>();
+
+        try
+        {
+            EmbeddingClient embeddingClient = _openAIClient.GetEmbeddingClient(EmbeddingModel);
+
+            var response = await embeddingClient.GenerateEmbeddingsAsync(textChunks, cancellationToken: cancellationToken);
+
+            var responseCount = response.Value?.Count() ?? 0;
+            _logger.LogInformation("[DEBUG] OpenAI API returned {Count} embedding values.", responseCount);
+
+            if(response.Value != null)
+            {
+                foreach (var item in response.Value)
+                {
+                    embeddings.Add(item.ToFloats().ToArray());
+                }
+            }
+
+            _logger.LogInformation("[DEBUG] Returning {Count} mapped vectors back to caller.", embeddings.Count);
+
+            return embeddings;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[DEBUG] Exception thrown inside GenerateEmbeddingsAsync");
+            throw new ApplicationException($"Failed to generate embeddings from OpenAI: {ex.Message}", ex);
+        }
     }
 }

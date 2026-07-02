@@ -15,7 +15,7 @@ public interface IDocumentRepository
 {
 	Task<DocumentResultDto?> GetDocumentByIdAsync(string documentId);
     Task<IEnumerable<DocumentResultDto>> SearchDocumentAsync(string query);
-    Task<DocumentUploadResponse> CreateDocumentAsync(string fileName, string contentType, Stream fileStream);
+    //Task<DocumentUploadResponse> CreateDocumentAsync(string fileName, string contentType, Stream fileStream);
 }
 
 public interface IKnowledgeBaseRepository
